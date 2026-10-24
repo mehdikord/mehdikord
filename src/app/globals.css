@@ -1,26 +1,339 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ──────────────────────────────────────────────────────────────────────────
+   Design tokens
+   Tailwind namespaces (color, font, ease, radius, shadow, breakpoint) generate
+   utilities; the remaining tokens live on :root and are consumed with the
+   `prop-(--token)` syntax or plain CSS.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  --breakpoint-xs: 26rem;
+
+  /* Surfaces */
+  --color-ink-950: #050507;
+  --color-ink-900: #09090d;
+  --color-ink-850: #0d0d13;
+  --color-ink-800: #13131b;
+  --color-ink-700: #1c1c26;
+
+  /* Text */
+  --color-fg: #f4f4f6;
+  --color-fg-muted: #a3a3ae;
+  --color-fg-subtle: #7d7d88;
+
+  /* Lines */
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-line-strong: rgb(255 255 255 / 0.16);
+
+  /* Accent — ultraviolet with restrained indigo */
+  --color-accent: #9b7bff;
+  --color-accent-strong: #8257ff;
+  --color-accent-soft: rgb(155 123 255 / 0.14);
+  --color-indigo: #6d6bff;
+  --color-signal: #4ade80;
+
+  /* Light surface used sparingly for contrast */
+  --color-paper: #ecebf2;
+  --color-paper-ink: #0c0b12;
+  --color-paper-muted: #55546a;
+  --color-paper-line: rgb(12 11 18 / 0.12);
+
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+
+  --shadow-frame: 0 1px 0 0 rgb(255 255 255 / 0.06) inset,
+    0 40px 80px -40px rgb(0 0 0 / 0.9), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --shadow-glow: 0 0 0 1px rgb(155 123 255 / 0.35),
+    0 12px 40px -12px rgb(130 87 255 / 0.55);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  color-scheme: dark;
+
+  --gutter: clamp(1rem, 4vw, 3rem);
+  --page-max: 90rem;
+  --nav-h: 4.5rem;
+  --section-y: clamp(5.5rem, 11vw, 10rem);
+
+  --duration-fast: 160ms;
+  --duration-base: 320ms;
+  --duration-slow: 700ms;
+
+  /* Fluid type scale (min, preferred, max) */
+  --text-label: 0.6875rem;
+  --text-body: clamp(1rem, 0.96rem + 0.2vw, 1.125rem);
+  --text-lead: clamp(1.125rem, 1.02rem + 0.5vw, 1.4rem);
+  --text-title: clamp(1.75rem, 1.3rem + 2vw, 3rem);
+  --text-headline: clamp(2.5rem, 1.6rem + 4.2vw, 5.75rem);
+  --text-display-sm: clamp(2.5rem, 12vw, 4.6rem);
+  --text-display: clamp(3.5rem, 7vw, 7.5rem);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Base
+   ────────────────────────────────────────────────────────────────────────── */
+
+@layer base {
+  html {
+    background: var(--color-ink-950);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body {
+    background: var(--color-ink-950);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.6;
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: rgb(155 123 255 / 0.4);
+    color: #fff;
+  }
+
+  [id] {
+    scroll-margin-top: calc(var(--nav-h) + 1rem);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Fine film grain over the whole page, rendered once and never repainted. */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0.045;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ──────────────────────────────────────────────────────────────────────────
+   Layout and typography utilities
+   ────────────────────────────────────────────────────────────────────────── */
+
+@utility container-page {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1.4;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@utility text-display {
+  font-size: var(--text-display-sm);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  font-weight: 600;
+
+  @media (width >= 48rem) {
+    font-size: var(--text-display);
+  }
+}
+
+@utility text-headline {
+  font-size: var(--text-headline);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-weight: 600;
+}
+
+@utility text-title {
+  font-size: var(--text-title);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+
+@utility text-lead {
+  font-size: var(--text-lead);
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+/* Editorial serif accent used for single emphasised words. */
+@utility text-accent-serif {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  background: linear-gradient(100deg, #e9e2ff 0%, var(--color-accent) 55%, var(--color-indigo) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Italic glyphs overhang their box; keep the gradient from clipping them. */
+  padding-inline-end: 0.08em;
+}
+
+@utility hairline-grid {
+  background-image:
+    linear-gradient(to right, var(--color-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Small CSS-only details (each disabled for reduced motion below)
+   ────────────────────────────────────────────────────────────────────────── */
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes scroll-cue {
+  0% {
+    transform: translateY(-100%);
+  }
+  60%,
+  100% {
+    transform: translateY(220%);
+  }
+}
+
+@keyframes data-flow {
+  to {
+    stroke-dashoffset: -48;
+  }
+}
+
+.status-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  animation: pulse-ring 2.4s var(--ease-out-quart) infinite;
+}
+
+.scroll-cue-line::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 40%;
+  background: linear-gradient(to bottom, transparent, var(--color-fg));
+  animation: scroll-cue 2.6s var(--ease-in-out-quart) infinite;
+}
+
+.flow-line {
+  stroke-dasharray: 2 10;
+  animation: data-flow 2.8s linear infinite;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .status-dot::after,
+  .scroll-cue-line::after,
+  .flow-line {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Project previews. Kept in the components layer so Tailwind utilities on
+   the same elements (positioning, sizing) always win. */
+@layer components {
+  /* Illustrative product window on an accent-tinted backdrop. The 16:10
+     window is contained with a margin; in tall frames it grows and bleeds off
+     the right edge instead of shrinking. The frame must be sized by its
+     parent (e.g. absolute inset-0). */
+  .preview-frame {
+    container-type: size;
+    overflow: hidden;
+    background:
+      radial-gradient(90% 75% at 50% 115%, var(--ps), transparent 70%),
+      radial-gradient(55% 45% at 90% -5%, var(--ps), transparent 70%),
+      var(--pv-frame);
+  }
+
+  .preview-canvas {
+    --w: max(min(calc(100cqw - 12cqmin), calc((100cqh - 12cqmin) * 1.6)), 110cqh);
+    container-type: inline-size;
+    position: absolute;
+    top: 50%;
+    left: max(6cqmin, calc(50cqw - var(--w) / 2));
+    width: var(--w);
+    aspect-ratio: 16 / 10;
+    transform: translateY(-50%);
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: var(--pv-shadow);
+  }
+
+  /* Palette helpers — values come from custom properties set per project. */
+  .pv-bg { background-color: var(--pv-bg); }
+  .pv-panel { background-color: var(--pv-panel); }
+  .pv-raised { background-color: var(--pv-raised); }
+  .pv-bar-bg { background-color: var(--pv-bar); }
+  .pv-bar-strong-bg { background-color: var(--pv-bar-strong); }
+  .pv-line { border-color: var(--pv-line); }
+  .pv-text { color: var(--pv-text); }
+  .pv-muted { color: var(--pv-muted); }
+  .pv-accent { color: var(--pa); }
+  .pv-accent-bg { background-color: var(--pa); }
+  .pv-accent-grad { background-image: linear-gradient(135deg, var(--pa), var(--pb)); }
+  .pv-soft-bg { background-color: var(--ps); }
+  .pv-accent-line { border-color: var(--pa); }
 }

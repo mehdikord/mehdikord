@@ -1,0 +1,166 @@
+"use client";
+
+import { m } from "motion/react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useCallback, useRef, useState, type MouseEvent } from "react";
+
+import { MobileMenu } from "@/components/layout/MobileMenu";
+import { sectionHref } from "@/components/layout/nav-links";
+import { ScrollProgress } from "@/components/layout/ScrollProgress";
+import { ease } from "@/components/motion/motion-variants";
+import { Wordmark } from "@/components/ui/Wordmark";
+import { content, navigation, type SectionId } from "@/data/content";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { useActiveSection, useScrolledPast } from "@/hooks/use-scroll-state";
+import { cn } from "@/lib/utils";
+
+const sectionIds = navigation.map((item) => item.id);
+const MENU_ID = "mobile-navigation";
+
+export function Navbar({ projectCount }: { projectCount: number }) {
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+  const scrolled = useScrolledPast(24);
+  const isDesktop = useMediaQuery("(min-width: 48rem)");
+  const activeSection = useActiveSection(isHome ? sectionIds : []);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [lastPathname, setLastPathname] = useState(pathname);
+
+  // Close transient UI when the route changes or the layout becomes desktop.
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    setMenuOpen(false);
+  }
+  if (isDesktop && menuOpen) setMenuOpen(false);
+
+  const current: SectionId | null = isHome
+    ? (activeSection ?? "top")
+    : pathname.startsWith("/projects")
+      ? "work"
+      : null;
+
+  const closeMenu = useCallback((options?: { restoreFocus?: boolean }) => {
+    setMenuOpen(false);
+    if (options?.restoreFocus) toggleRef.current?.focus();
+  }, []);
+
+  const handleSectionClick = useCallback(
+    (id: SectionId, event: MouseEvent<HTMLAnchorElement>) => {
+      setMenuOpen(false);
+      // "Home" on the homepage scrolls back to the top instead of re-navigating.
+      if (id === "top" && isHome) {
+        event.preventDefault();
+        window.scrollTo({ top: 0 });
+        window.history.replaceState(window.history.state, "", "/");
+      }
+    },
+    [isHome],
+  );
+
+  const solid = scrolled || menuOpen;
+
+  return (
+    <m.header
+      className="fixed inset-x-0 top-0 z-50"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: ease.outExpo, delay: isHome ? 0.65 : 0.1 }}
+      data-reveal=""
+    >
+      <div
+        className={cn(
+          "relative border-b transition-[background-color,border-color,backdrop-filter] duration-500",
+          solid ? "border-line bg-ink-950/75 backdrop-blur-xl" : "border-transparent bg-transparent",
+        )}
+      >
+        <nav
+          aria-label={content.nav.primaryLabel}
+          className="container-page flex h-(--nav-h) items-center justify-between gap-6"
+        >
+          <Wordmark onNavigate={() => setMenuOpen(false)} />
+
+          <ul className="hidden items-center gap-1 md:flex">
+            {navigation.map((item) => {
+              const isActive = current === item.id;
+              return (
+                <li key={item.id}>
+                  <Link
+                    href={sectionHref(item.id)}
+                    onClick={(event) => handleSectionClick(item.id, event)}
+                    aria-current={isActive ? "true" : undefined}
+                    className={cn(
+                      "group relative inline-flex h-9 items-center rounded-full px-3.5 text-[0.8125rem] font-medium transition-colors duration-300 lg:px-4",
+                      isActive ? "text-fg" : "text-fg-muted hover:text-fg",
+                    )}
+                  >
+                    {item.label}
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "absolute bottom-0.5 left-1/2 h-px -translate-x-1/2 bg-accent transition-[width,opacity] duration-500 ease-out-expo",
+                        isActive ? "w-4 opacity-100" : "w-0 opacity-0 group-hover:w-2 group-hover:opacity-60",
+                      )}
+                    />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/projects"
+              className={cn(
+                "hidden h-9 items-center gap-2 rounded-full border px-4 text-[0.8125rem] font-medium transition-colors duration-300 lg:inline-flex",
+                pathname === "/projects"
+                  ? "border-accent/50 bg-accent-soft text-fg"
+                  : "border-line-strong text-fg hover:border-accent/50",
+              )}
+            >
+              {content.nav.allProjects}
+              <span className="font-mono text-[0.6875rem] text-fg-subtle">{String(projectCount).padStart(2, "0")}</span>
+            </Link>
+
+            <button
+              ref={toggleRef}
+              type="button"
+              className="relative inline-flex size-10 items-center justify-center rounded-full border border-line-strong md:hidden"
+              aria-expanded={menuOpen}
+              aria-controls={MENU_ID}
+              aria-label={menuOpen ? content.nav.closeMenu : content.nav.openMenu}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              <span aria-hidden className="relative block h-2.5 w-4">
+                <span
+                  className={cn(
+                    "absolute left-0 h-px w-4 bg-fg transition-transform duration-500 ease-out-expo",
+                    menuOpen ? "top-1/2 rotate-45" : "top-0",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "absolute left-0 h-px w-4 bg-fg transition-transform duration-500 ease-out-expo",
+                    menuOpen ? "top-1/2 -rotate-45" : "top-full",
+                  )}
+                />
+              </span>
+            </button>
+          </div>
+        </nav>
+        <ScrollProgress />
+      </div>
+
+      <MobileMenu
+        id={MENU_ID}
+        open={menuOpen}
+        current={current}
+        toggleRef={toggleRef}
+        onClose={closeMenu}
+        onSectionClick={handleSectionClick}
+      />
+    </m.header>
+  );
+}

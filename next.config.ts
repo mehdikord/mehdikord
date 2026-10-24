@@ -1,16 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
-  turbopack: {
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
+  poweredByHeader: false,
+  images: {
+    // The hero poster is served from the supplied CDN. Add hosts here if
+    // project screenshots are later loaded from a remote origin.
+    remotePatterns: [
+      { protocol: "https", hostname: "d2ol7oe51mr4n9.cloudfront.net" },
+    ],
   },
 };
 
