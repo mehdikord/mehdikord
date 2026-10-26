@@ -1,17 +1,38 @@
-import { ArrowUpRight } from "lucide-react";
-import Link from "next/link";
-
+import { FeaturedGallery, type FeaturedItem } from "@/components/projects/FeaturedGallery";
+import { PreviewNotice, ProjectVisual } from "@/components/projects/ProjectMedia";
 import { Reveal } from "@/components/motion/Reveal";
-import { ProjectShowcase } from "@/components/projects/ProjectShowcase";
+import { ButtonLink } from "@/components/ui/ButtonLink";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { content } from "@/data/content";
-import { getAllProjects, getFeaturedProjects } from "@/lib/projects";
-import { pad } from "@/lib/utils";
+import { getDictionary } from "@/data/dictionaries";
+import { interpolate, localePath, localizeDigits, pad } from "@/i18n/format";
+import { getLocale } from "@/i18n/server";
+import { getAllProjects, getCaseStudy } from "@/lib/projects";
 
-export function FeaturedProjectsSection() {
-  const copy = content.work;
-  const featured = getFeaturedProjects();
-  const total = getAllProjects().length;
+export async function FeaturedProjectsSection() {
+  const locale = await getLocale();
+  const copy = getDictionary(locale).work;
+  const projects = await getAllProjects(locale);
+  const featured = projects.filter((project) => project.featured);
+  const total = projects.length;
+
+  const items: FeaturedItem[] = featured.map((project) => {
+    const number = pad(locale, projects.indexOf(project) + 1);
+    return {
+      slug: project.slug,
+      href: localePath(locale, `/projects/${project.slug}`),
+      title: project.title,
+      indexLabel: `${copy.indexPrefix}${number}`,
+      number,
+      category: project.categoryLabel,
+      period: localizeDigits(locale, project.period),
+      description: project.shortDescription,
+      role: project.role,
+      technologies: project.technologies,
+      ctaLabel: getCaseStudy(project) ? copy.caseStudy : copy.overview,
+      visual: <ProjectVisual project={project} sizes="(min-width: 1024px) 66vw, 85vw" />,
+      notice: project.coverImage ? null : <PreviewNotice placement="top" />,
+    };
+  });
 
   return (
     <section id="work" aria-labelledby="work-title" className="relative py-(--section-y)">
@@ -22,27 +43,24 @@ export function FeaturedProjectsSection() {
       <div className="container-page relative">
         <SectionHeader index={copy.index} label={copy.label} title={copy.title} titleId="work-title" intro={copy.intro} />
 
-        <div className="mt-20 md:mt-28">
-          <ProjectShowcase projects={featured} />
+        <div className="mt-14 md:mt-20">
+          <FeaturedGallery
+            items={items}
+            labels={{ role: copy.roleLabel, stack: copy.stackLabel, hint: copy.panelHint }}
+          />
         </div>
 
-        <Reveal className="mt-28 md:mt-44">
-          <Link
-            href="/projects"
-            className="group flex flex-col gap-6 border-y border-line py-10 transition-colors duration-500 hover:border-accent/40 md:flex-row md:items-center md:justify-between md:py-14"
-          >
-            <span className="label-mono text-fg-subtle">
-              <span className="text-accent">{pad(total)}</span> {content.projectsPage.projectsNoun} · {copy.exploreAllHint}
+        <Reveal className="mt-10 flex flex-col items-start gap-6 border-t border-line pt-8 sm:flex-row sm:items-center sm:justify-between md:mt-14">
+          <p className="label-mono text-fg-subtle">
+            {interpolate(copy.shownCount, { shown: pad(locale, featured.length), total: pad(locale, total) })}
+            <span aria-hidden className="mx-3 text-line-strong">
+              /
             </span>
-            <span className="flex items-center justify-between gap-6 md:justify-end">
-              <span className="text-[clamp(2rem,1.2rem+3.6vw,4.75rem)] leading-none font-semibold tracking-[-0.045em] transition-colors duration-500 group-hover:text-accent">
-                {copy.exploreAll}
-              </span>
-              <span className="inline-flex size-14 shrink-0 items-center justify-center rounded-full border border-line-strong transition-[background-color,border-color,transform] duration-700 ease-out-expo group-hover:rotate-45 group-hover:border-accent group-hover:bg-accent md:size-20">
-                <ArrowUpRight aria-hidden className="size-6 transition-colors group-hover:text-ink-950 md:size-8" strokeWidth={1.5} />
-              </span>
-            </span>
-          </Link>
+            {copy.exploreAllHint}
+          </p>
+          <ButtonLink href={localePath(locale, "/projects")} icon="right">
+            {copy.exploreAll}
+          </ButtonLink>
         </Reveal>
       </div>
     </section>

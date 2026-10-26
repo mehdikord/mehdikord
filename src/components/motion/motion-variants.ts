@@ -32,6 +32,12 @@ export const fadeUp: Variants = {
   visible: (delay: number = 0) => ({ opacity: 1, y: 0, transition: revealTransition(delay) }),
 };
 
+/** Small, springy rise for compact items such as tags. */
+export const pop: Variants = {
+  hidden: { opacity: 0, y: 14, scale: 0.94 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 260, damping: 22, mass: 0.7 } },
+};
+
 export const fade: Variants = {
   hidden: { opacity: 0 },
   visible: (delay: number = 0) => ({ opacity: 1, transition: { duration: duration.slow, ease: ease.outQuart, delay } }),

@@ -7,12 +7,13 @@ import { MaskedHeading } from "@/components/motion/MaskedHeading";
 import { Reveal, RevealGroup, RevealItem } from "@/components/motion/Reveal";
 import { ProjectMedia } from "@/components/projects/ProjectMedia";
 import { ButtonLink } from "@/components/ui/ButtonLink";
-import { content } from "@/data/content";
-import { getAdjacentProjects, getCaseStudy, getCategoryLabel, getLiveUrl } from "@/lib/projects";
-import { cn, displayUrl, pad } from "@/lib/utils";
+import { getDictionary } from "@/data/dictionaries";
+import type { Locale } from "@/i18n/config";
+import { localePath, localizeDigits, pad } from "@/i18n/format";
+import { getLocale } from "@/i18n/server";
+import { getAdjacentProjects, getCaseStudy, getLiveUrl } from "@/lib/projects";
+import { cn, displayUrl } from "@/lib/utils";
 import type { CaseStudyNote, Project } from "@/types/portfolio";
-
-const copy = content.caseStudy;
 
 function Block({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
   return (
@@ -25,12 +26,12 @@ function Block({ title, children, className }: { title: string; children: ReactN
   );
 }
 
-function NoteGrid({ notes, marker }: { notes: readonly CaseStudyNote[]; marker: "index" | "arrow" }) {
+function NoteGrid({ notes, marker, locale }: { notes: readonly CaseStudyNote[]; marker: "index" | "arrow"; locale: Locale }) {
   return (
     <RevealGroup as="ol" className="grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2">
       {notes.map((note, index) => (
         <RevealItem as="li" key={note.title} className="bg-ink-950 p-6 sm:p-7 sm:odd:last:col-span-2">
-          <span className="font-mono text-xs text-accent">{marker === "index" ? pad(index + 1) : "→"}</span>
+          <span className="font-mono text-xs text-accent">{marker === "index" ? pad(locale, index + 1) : <span className="inline-block rtl:-scale-x-100">→</span>}</span>
           <h3 className="mt-4 text-lg font-medium tracking-tight text-balance">{note.title}</h3>
           <p className="mt-2.5 text-[0.9375rem] text-pretty text-fg-muted">{note.detail}</p>
         </RevealItem>
@@ -39,12 +40,12 @@ function NoteGrid({ notes, marker }: { notes: readonly CaseStudyNote[]; marker: 
   );
 }
 
-function BulletList({ items }: { items: readonly string[] }) {
+function BulletList({ items, locale }: { items: readonly string[]; locale: Locale }) {
   return (
     <RevealGroup as="ul" className="divide-y divide-line">
       {items.map((item, index) => (
         <RevealItem as="li" key={item} className="flex gap-5 py-4 text-pretty first:pt-0">
-          <span className="w-6 shrink-0 pt-1 font-mono text-xs text-fg-subtle">{pad(index + 1)}</span>
+          <span className="w-6 shrink-0 pt-1 font-mono text-xs text-fg-subtle">{pad(locale, index + 1)}</span>
           <span>{item}</span>
         </RevealItem>
       ))}
@@ -53,16 +54,24 @@ function BulletList({ items }: { items: readonly string[] }) {
 }
 
 /** Shared template for every project page: full case study or overview. */
-export function ProjectCaseStudy({ project, index }: { project: Project; index: number }) {
+export async function ProjectCaseStudy({ project, index }: { project: Project; index: number }) {
+  const locale = await getLocale();
+  const dictionary = getDictionary(locale);
+  const copy = dictionary.caseStudy;
   const study = getCaseStudy(project);
   const liveUrl = getLiveUrl(project);
-  const adjacent = getAdjacentProjects(project.slug);
+  const adjacent = await getAdjacentProjects(locale, project.slug);
+  const period = localizeDigits(locale, project.period);
+  const arrowBack =
+    "size-3.5 transition-transform duration-500 ease-out-expo group-hover:-translate-x-1 rtl:-scale-x-100 rtl:group-hover:translate-x-1";
+  const arrowForward =
+    "size-3.5 transition-transform duration-500 ease-out-expo group-hover:translate-x-1 rtl:-scale-x-100 rtl:group-hover:-translate-x-1";
   const [leadParagraph, ...paragraphs] = project.fullDescription;
 
   const meta = [
     { label: copy.role, value: project.role },
-    { label: copy.category, value: getCategoryLabel(project.category) },
-    { label: copy.period, value: project.period },
+    { label: copy.category, value: project.categoryLabel },
+    { label: copy.period, value: period },
   ];
 
   return (
@@ -70,19 +79,22 @@ export function ProjectCaseStudy({ project, index }: { project: Project; index: 
       <header className="container-page pt-[calc(var(--nav-h)+3.5rem)] md:pt-[calc(var(--nav-h)+6rem)]">
         <Reveal still>
           <Link
-            href="/projects"
+            href={localePath(locale, "/projects")}
             className="group label-mono inline-flex items-center gap-2 text-fg-subtle transition-colors hover:text-fg"
           >
-            <ArrowLeft aria-hidden className="size-3.5 transition-transform duration-500 ease-out-expo group-hover:-translate-x-1" />
+            <ArrowLeft aria-hidden className={arrowBack} />
             {copy.back}
           </Link>
         </Reveal>
 
         <Reveal still className="label-mono mt-14 flex flex-wrap items-center gap-x-3 gap-y-1 text-fg-subtle md:mt-20">
-          <span className="text-accent">P/{pad(index + 1)}</span>
-          <span>{getCategoryLabel(project.category)}</span>
+          <span className="text-accent">
+            {dictionary.work.indexPrefix}
+            {pad(locale, index + 1)}
+          </span>
+          <span>{project.categoryLabel}</span>
           <span aria-hidden>·</span>
-          <span>{project.period}</span>
+          <span>{period}</span>
           <span aria-hidden>·</span>
           <span>{study ? copy.caseStudyLabel : copy.overviewLabel}</span>
         </Reveal>
@@ -99,7 +111,7 @@ export function ProjectCaseStudy({ project, index }: { project: Project; index: 
           </Reveal>
           {liveUrl ? (
             <Reveal delay={0.25} className="md:col-span-4 md:col-start-9 md:justify-self-end">
-              <ButtonLink href={liveUrl} external icon="up-right" ariaLabel={`${copy.live}: ${project.title} (opens in a new tab)`}>
+              <ButtonLink href={liveUrl} external icon="up-right" ariaLabel={`${copy.live}: ${project.title} (${dictionary.contact.opensInNewTab})`}>
                 {copy.live}
               </ButtonLink>
             </Reveal>
@@ -131,7 +143,7 @@ export function ProjectCaseStudy({ project, index }: { project: Project; index: 
                 <dt className="label-mono text-fg-subtle">{copy.stack}</dt>
                 <dd className="mt-4 flex flex-wrap gap-2">
                   {project.technologies.map((technology) => (
-                    <span key={technology} className="rounded-full border border-line-strong px-3 py-1 font-mono text-xs text-fg-muted">
+                    <span key={technology} dir="ltr" className="rounded-full border border-line-strong px-3 py-1 font-mono text-xs text-fg-muted">
                       {technology}
                     </span>
                   ))}
@@ -145,6 +157,7 @@ export function ProjectCaseStudy({ project, index }: { project: Project; index: 
                       href={liveUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      dir="ltr"
                       className="inline-flex max-w-full items-center gap-1.5 underline decoration-line-strong underline-offset-4 hover:decoration-accent"
                     >
                       <span className="truncate">{displayUrl(liveUrl)}</span>
@@ -188,34 +201,34 @@ export function ProjectCaseStudy({ project, index }: { project: Project; index: 
 
           {project.responsibilities.length > 0 ? (
             <Block title={copy.responsibilities}>
-              <BulletList items={project.responsibilities} />
+              <BulletList items={project.responsibilities} locale={locale} />
             </Block>
           ) : null}
 
           {project.highlights.length > 0 ? (
             <Block title={copy.highlights}>
-              <BulletList items={project.highlights} />
+              <BulletList items={project.highlights} locale={locale} />
             </Block>
           ) : null}
 
           {study && study.challenges.length > 0 ? (
             <Block title={copy.challenges}>
-              <NoteGrid notes={study.challenges} marker="index" />
+              <NoteGrid notes={study.challenges} marker="index" locale={locale} />
             </Block>
           ) : null}
 
           {study && study.decisions.length > 0 ? (
             <Block title={copy.decisions}>
-              <NoteGrid notes={study.decisions} marker="arrow" />
+              <NoteGrid notes={study.decisions} marker="arrow" locale={locale} />
             </Block>
           ) : null}
 
           {study?.implementation && study.implementation.length > 0 ? (
             <Block title={copy.implementation}>
-              <RevealGroup as="ul" className="space-y-3 font-mono text-[0.8125rem] leading-relaxed text-fg-muted">
+              <RevealGroup as="ul" className="space-y-3 text-[0.9375rem] leading-relaxed text-fg-muted">
                 {study.implementation.map((item) => (
                   <RevealItem as="li" key={item} className="flex gap-3">
-                    <span aria-hidden className="text-accent">
+                    <span aria-hidden className="inline-block text-accent rtl:-scale-x-100">
                       ›
                     </span>
                     {item}
@@ -255,28 +268,28 @@ export function ProjectCaseStudy({ project, index }: { project: Project; index: 
             ].map(({ project: target, label, direction }) => (
               <Link
                 key={direction}
-                href={`/projects/${target.slug}`}
+                href={localePath(locale, `/projects/${target.slug}`)}
                 rel={direction === "next" ? "next" : "prev"}
                 className={cn(
                   "group flex flex-col gap-4 py-12 transition-colors md:py-16",
                   direction === "next"
-                    ? "border-t border-line md:items-end md:border-t-0 md:border-l md:pl-10 md:text-right"
-                    : "md:pr-10",
+                    ? "border-t border-line md:items-end md:border-s md:border-t-0 md:ps-10 md:text-end"
+                    : "md:pe-10",
                 )}
               >
                 <span className="label-mono inline-flex items-center gap-2 text-fg-subtle">
                   {direction === "previous" ? (
-                    <ArrowLeft aria-hidden className="size-3.5 transition-transform duration-500 ease-out-expo group-hover:-translate-x-1" />
+                    <ArrowLeft aria-hidden className={arrowBack} />
                   ) : null}
                   {label}
                   {direction === "next" ? (
-                    <ArrowRight aria-hidden className="size-3.5 transition-transform duration-500 ease-out-expo group-hover:translate-x-1" />
+                    <ArrowRight aria-hidden className={arrowForward} />
                   ) : null}
                 </span>
                 <span className="text-[clamp(1.75rem,1.2rem+2vw,3.25rem)] leading-none font-semibold tracking-[-0.04em] transition-colors duration-300 group-hover:text-accent">
                   {target.title}
                 </span>
-                <span className="text-sm text-fg-subtle">{getCategoryLabel(target.category)}</span>
+                <span className="text-sm text-fg-subtle">{target.categoryLabel}</span>
               </Link>
             ))}
           </div>

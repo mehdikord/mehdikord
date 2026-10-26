@@ -35,41 +35,44 @@ function getHandleHref(handle: string, base: string): string | null {
 }
 
 /** Normalises raw profile values into renderable, validated channels. */
-export function getContactChannels(contact: ContactDetails): ContactChannel[] {
+export function getContactChannels(
+  contact: ContactDetails,
+  labels: Record<ContactChannelId, string>,
+): ContactChannel[] {
   const linkedin = toSafeExternalUrl(contact.linkedin.trim());
 
   return [
     {
       id: "email",
-      label: "Email",
+      label: labels.email,
       display: contact.email.trim(),
       href: getEmailHref(contact.email),
       external: false,
     },
     {
       id: "phone",
-      label: "Phone",
+      label: labels.phone,
       display: contact.phone.trim(),
       href: getPhoneHref(contact.phone),
       external: false,
     },
     {
       id: "telegram",
-      label: "Telegram",
+      label: labels.telegram,
       display: contact.telegram ? `@${stripAt(contact.telegram)}` : "",
       href: getHandleHref(contact.telegram, "https://t.me/"),
       external: true,
     },
     {
       id: "linkedin",
-      label: "LinkedIn",
+      label: labels.linkedin,
       display: linkedin ? linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com/, "").replace(/\/$/, "") || "LinkedIn" : "",
       href: linkedin,
       external: true,
     },
     {
       id: "instagram",
-      label: "Instagram",
+      label: labels.instagram,
       display: contact.instagram ? `@${stripAt(contact.instagram)}` : "",
       href: getHandleHref(contact.instagram, "https://www.instagram.com/"),
       external: true,

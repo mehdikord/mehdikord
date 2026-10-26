@@ -68,6 +68,9 @@
   --nav-h: 4.5rem;
   --section-y: clamp(5.5rem, 11vw, 10rem);
 
+  /* Clearance below masked headline lines (descenders, italic overhangs). */
+  --mask-pad: 0.14em;
+
   --duration-fast: 160ms;
   --duration-base: 320ms;
   --duration-slow: 700ms;
@@ -102,7 +105,7 @@
   body {
     background: var(--color-ink-950);
     color: var(--color-fg);
-    font-family: var(--font-sans);
+    font-family: var(--font-body, var(--font-sans));
     font-size: var(--text-body);
     line-height: 1.6;
     overflow-x: clip;
@@ -204,6 +207,18 @@
   padding-inline-end: 0.08em;
 }
 
+/* A clipping mask for line-by-line headline reveals. */
+@utility mask-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: var(--mask-pad);
+  margin-bottom: calc(var(--mask-pad) * -1);
+}
+
+@utility font-persian {
+  font-family: var(--font-vazirmatn), system-ui, sans-serif;
+}
+
 @utility hairline-grid {
   background-image:
     linear-gradient(to right, var(--color-line) 1px, transparent 1px),
@@ -292,48 +307,137 @@
   }
 }
 
-/* Project previews. Kept in the components layer so Tailwind utilities on
-   the same elements (positioning, sizing) always win. */
+/* Homepage featured rail: panels clip a visual sized to the expanded panel. */
 @layer components {
-  /* Illustrative product window on an accent-tinted backdrop. The 16:10
-     window is contained with a margin; in tall frames it grows and bleeds off
-     the right edge instead of shrinking. The frame must be sized by its
-     parent (e.g. absolute inset-0). */
-  .preview-frame {
-    container-type: size;
-    overflow: hidden;
-    background:
-      radial-gradient(90% 75% at 50% 115%, var(--ps), transparent 70%),
-      radial-gradient(55% 45% at 90% -5%, var(--ps), transparent 70%),
-      var(--pv-frame);
-  }
-
-  .preview-canvas {
-    --w: max(min(calc(100cqw - 12cqmin), calc((100cqh - 12cqmin) * 1.6)), 110cqh);
+  .featured-rail {
     container-type: inline-size;
-    position: absolute;
-    top: 50%;
-    left: max(6cqmin, calc(50cqw - var(--w) / 2));
-    width: var(--w);
-    aspect-ratio: 16 / 10;
-    transform: translateY(-50%);
-    overflow: hidden;
-    border-radius: 10px;
-    box-shadow: var(--pv-shadow);
+    /* Three panels flexing 5 : 1 : 1 with two 0.75rem gaps. */
+    --panel-w: calc((100cqw - 1.5rem) * 5 / 7);
+    --panel-content-w: calc(var(--panel-w) - 5rem);
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Persian (right-to-left)
+   Persian script is connected: letter-spacing breaks the joins and uppercase
+   doesn't exist, so both are neutralised. Glyph dots and descenders need more
+   vertical room than the tight Latin display leading allows.
+   ────────────────────────────────────────────────────────────────────────── */
+
+html[lang="fa"] {
+  --font-body: var(--font-vazirmatn), var(--font-geist-sans), system-ui, sans-serif;
+  --mask-pad: 0.32em;
+}
+
+html[lang="fa"] body {
+  line-height: 1.9;
+}
+
+html[lang="fa"] body :not(.font-mono, [dir="ltr"], [dir="ltr"] *) {
+  letter-spacing: 0 !important;
+}
+
+html[lang="fa"] .label-mono {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  text-transform: none;
+  letter-spacing: 0 !important;
+}
+
+html[lang="fa"] :is(h1, h2, h3, h4) {
+  line-height: 1.4 !important;
+}
+
+html[lang="fa"] .text-lead {
+  line-height: 1.85;
+}
+
+/* The serif italic accent has no Persian glyphs: use a heavy Vazirmatn instead. */
+html[lang="fa"] .text-accent-serif {
+  font-family: var(--font-body);
+  font-style: normal;
+  font-weight: 800;
+  font-size: 1em !important;
+  line-height: inherit !important;
+  padding-inline-end: 0;
+}
+
+/* Gradient-clipped display text needs its full glyph box inside the line. */
+html[lang="fa"] .display-name {
+  line-height: 1.45 !important;
+}
+
+/* Contact section: drifting wave lines and pointer spotlight cards. */
+@keyframes wave-drift {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.wave-drift {
+  animation: wave-drift 40s linear infinite;
+  will-change: transform;
+}
+
+@layer components {
+  .spotlight-card {
+    --spot-x: 50%;
+    --spot-y: -40%;
+    position: relative;
+    isolation: isolate;
   }
 
-  /* Palette helpers — values come from custom properties set per project. */
-  .pv-bg { background-color: var(--pv-bg); }
-  .pv-panel { background-color: var(--pv-panel); }
-  .pv-raised { background-color: var(--pv-raised); }
-  .pv-bar-bg { background-color: var(--pv-bar); }
-  .pv-bar-strong-bg { background-color: var(--pv-bar-strong); }
-  .pv-line { border-color: var(--pv-line); }
-  .pv-text { color: var(--pv-text); }
-  .pv-muted { color: var(--pv-muted); }
-  .pv-accent { color: var(--pa); }
-  .pv-accent-bg { background-color: var(--pa); }
-  .pv-accent-grad { background-image: linear-gradient(135deg, var(--pa), var(--pb)); }
-  .pv-soft-bg { background-color: var(--ps); }
-  .pv-accent-line { border-color: var(--pa); }
+  /* Light that follows the pointer inside the card. */
+  .spotlight-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(18rem circle at var(--spot-x) var(--spot-y), rgb(130 87 255 / 0.16), transparent 60%);
+    opacity: 0;
+    transition: opacity var(--duration-slow) var(--ease-out-quart);
+  }
+
+  /* Matching glow on the border, masked to a 1px ring. */
+  .spotlight-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: radial-gradient(14rem circle at var(--spot-x) var(--spot-y), rgb(185 160 255 / 0.85), transparent 65%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-slow) var(--ease-out-quart);
+  }
+
+  .spotlight-card:hover::before,
+  .spotlight-card:hover::after,
+  .spotlight-card:focus-within::before,
+  .spotlight-card:focus-within::after {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave-drift {
+    animation: none;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Admin panel — denser reading rhythm than the Persian site copy.
+   ────────────────────────────────────────────────────────────────────────── */
+
+html[lang="fa"] body.admin-panel {
+  line-height: 1.6;
+  font-size: 0.9375rem;
+}
+
+body.admin-panel::after {
+  display: none;
 }

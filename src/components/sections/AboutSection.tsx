@@ -1,18 +1,26 @@
 import { ArchitectureDiagram } from "@/components/about/ArchitectureDiagram";
+import { StrengthList } from "@/components/about/StrengthList";
 import { Reveal, RevealGroup, RevealItem } from "@/components/motion/Reveal";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { content } from "@/data/content";
-import { profile } from "@/data/profile";
+import { getDictionary } from "@/data/dictionaries";
+import { localizeDigits, pad } from "@/i18n/format";
+import { getLocale } from "@/i18n/server";
+import { getProfile } from "@/lib/profile";
 import { getAllProjects, getUsedCategories } from "@/lib/projects";
-import { pad } from "@/lib/utils";
 
-export function AboutSection() {
-  const copy = content.about;
+export async function AboutSection() {
+  const locale = await getLocale();
+  const copy = getDictionary(locale).about;
+  const [profile, projects, categories] = await Promise.all([
+    getProfile(locale),
+    getAllProjects(locale),
+    getUsedCategories(locale),
+  ]);
   const [lead, ...paragraphs] = profile.bio;
   const stats = [
-    { value: String(profile.yearsOfExperience), suffix: "+", label: copy.stats.years },
-    { value: pad(getAllProjects().length), label: copy.stats.projects },
-    { value: pad(getUsedCategories().length), label: copy.stats.domains },
+    { value: localizeDigits(locale, profile.yearsOfExperience), suffix: "+", label: copy.stats.years },
+    { value: pad(locale, projects.length), label: copy.stats.projects },
+    { value: pad(locale, categories.length), label: copy.stats.domains },
   ];
 
   return (
@@ -33,7 +41,7 @@ export function AboutSection() {
 
             <RevealGroup as="ul" className="mt-14 grid grid-cols-3 border-t border-line">
               {stats.map((stat) => (
-                <RevealItem as="li" key={stat.label} className="border-r border-line pt-6 pr-4 last:border-r-0 [&:not(:first-child)]:pl-4">
+                <RevealItem as="li" key={stat.label} className="border-e border-line pe-4 pt-6 last:border-e-0 [&:not(:first-child)]:ps-4">
                   <p className="text-[clamp(2.25rem,5vw,3.75rem)] leading-none font-semibold tracking-[-0.05em]">
                     {stat.value}
                     {stat.suffix ? <span className="text-accent">{stat.suffix}</span> : null}
@@ -52,17 +60,17 @@ export function AboutSection() {
                   className="hairline-grid absolute inset-0 rounded-md opacity-60 [mask-image:radial-gradient(ellipse_at_center,#000_30%,transparent_75%)]"
                 />
                 {/* Corner registration ticks */}
-                <span aria-hidden className="absolute -top-px -left-px size-3 border-t border-l border-accent/70" />
-                <span aria-hidden className="absolute -top-px -right-px size-3 border-t border-r border-accent/70" />
-                <span aria-hidden className="absolute -bottom-px -left-px size-3 border-b border-l border-accent/70" />
-                <span aria-hidden className="absolute -right-px -bottom-px size-3 border-r border-b border-accent/70" />
+                <span aria-hidden className="absolute -start-px -top-px size-3 border-s border-t border-accent/70" />
+                <span aria-hidden className="absolute -end-px -top-px size-3 border-e border-t border-accent/70" />
+                <span aria-hidden className="absolute -start-px -bottom-px size-3 border-s border-b border-accent/70" />
+                <span aria-hidden className="absolute -end-px -bottom-px size-3 border-e border-b border-accent/70" />
                 <p className="label-mono relative mb-6 flex items-center justify-between text-fg-subtle">
                   <span>{copy.diagramLabel}</span>
                   <span aria-hidden className="hidden text-accent sm:inline">
-                    ● live path
+                    ● {copy.diagramLive}
                   </span>
                 </p>
-                <div className="relative mx-auto max-w-[30rem]">
+                <div dir="ltr" className="relative mx-auto max-w-[30rem]">
                   <ArchitectureDiagram />
                 </div>
               </div>
@@ -78,7 +86,7 @@ export function AboutSection() {
           <RevealGroup as="ol" className="grid gap-10 sm:grid-cols-3 sm:gap-8 lg:col-span-9">
             {profile.philosophy.map((principle, index) => (
               <RevealItem as="li" key={principle.title} className="border-t border-line-strong pt-6">
-                <span className="font-mono text-xs text-accent">{pad(index + 1)}</span>
+                <span className="font-mono text-xs text-accent">{pad(locale, index + 1)}</span>
                 <h4 className="mt-4 text-xl font-medium tracking-tight text-balance">{principle.title}</h4>
                 <p className="mt-3 text-sm text-pretty text-fg-muted">{principle.body}</p>
               </RevealItem>
@@ -89,21 +97,11 @@ export function AboutSection() {
         <div className="mt-24 grid gap-8 md:mt-32 lg:grid-cols-12 lg:gap-x-8">
           <Reveal still className="lg:col-span-3">
             <h3 className="label-mono text-fg-subtle">{copy.strengthsLabel}</h3>
+            <p className="mt-4 max-w-xs text-sm text-pretty text-fg-muted">{copy.strengthsIntro}</p>
           </Reveal>
-          <Reveal className="lg:col-span-9">
-            <ul className="flex flex-wrap items-baseline gap-x-1 text-[clamp(1.5rem,1.1rem+1.8vw,2.75rem)] leading-[1.25] font-medium tracking-[-0.03em]">
-              {profile.strengths.map((strength, index) => (
-                <li key={strength} className="text-fg/90 transition-colors duration-300 hover:text-fg">
-                  {strength}
-                  {index < profile.strengths.length - 1 ? (
-                    <span aria-hidden className="mx-2 font-serif text-accent/70 italic">
-                      /
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </Reveal>
+          <div className="lg:col-span-9">
+            <StrengthList strengths={profile.strengths} />
+          </div>
         </div>
       </div>
     </section>

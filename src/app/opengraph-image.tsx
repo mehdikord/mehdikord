@@ -1,12 +1,15 @@
 import { ImageResponse } from "next/og";
 
-import { profile } from "@/data/profile";
+import { getProfile } from "@/lib/profile";
 
-export const alt = `${profile.name} — ${profile.title}`;
+export const alt = "Portfolio preview";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function OpengraphImage() {
+export default async function OpengraphImage() {
+  // Shared by both languages: the image font has no Persian glyphs, so it uses
+  // the English profile.
+  const profile = await getProfile("en");
   const headline = profile.hero.headline.map((line) => line.map((segment) => segment.text).join(" "));
 
   return new ImageResponse(

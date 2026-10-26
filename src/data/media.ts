@@ -1,10 +1,6 @@
-/**
- * Supplied hero media. These URLs are used exactly as provided; the hero
- * remains complete (poster, then CSS artwork) if either fails to load.
- */
-export const heroMedia = {
-  video:
-    "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4",
-  poster:
-    "https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp",
+/** Shown in place of a project's cover until a screenshot is uploaded in the admin panel. */
+export const projectPlaceholder = {
+  src: "/images/project-placeholder.svg",
+  width: 1600,
+  height: 1000,
 } as const;

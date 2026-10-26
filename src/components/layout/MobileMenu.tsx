@@ -4,27 +4,33 @@ import { AnimatePresence, m } from "motion/react";
 import Link from "next/link";
 import { useEffect, useRef, type RefObject } from "react";
 
-import { ease } from "@/components/motion/motion-variants";
 import { sectionHref } from "@/components/layout/nav-links";
+import { ease } from "@/components/motion/motion-variants";
 import { StatusDot } from "@/components/ui/StatusDot";
-import { content, navigation, type SectionId } from "@/data/content";
-import { profile } from "@/data/profile";
-import { cn, pad } from "@/lib/utils";
+import type { Dictionary } from "@/data/dictionaries";
+import { navigationSections, type NavigationSection } from "@/data/sections";
+import { localePath, pad } from "@/i18n/format";
+import { useLocale } from "@/i18n/LocaleProvider";
+import { cn } from "@/lib/utils";
+import type { Profile } from "@/types/portfolio";
 
 interface MobileMenuProps {
   id: string;
   open: boolean;
-  current: SectionId | null;
+  current: NavigationSection | null;
+  copy: Dictionary["nav"];
+  availability: Profile["availability"];
   toggleRef: RefObject<HTMLButtonElement | null>;
   onClose: (options?: { restoreFocus?: boolean }) => void;
-  onSectionClick: (id: SectionId, event: React.MouseEvent<HTMLAnchorElement>) => void;
+  onSectionClick: (id: NavigationSection, event: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
 /**
  * Full-width dropdown menu for small screens. Closes on Escape, outside
  * clicks and navigation; locks page scroll while open.
  */
-export function MobileMenu({ id, open, current, toggleRef, onClose, onSectionClick }: MobileMenuProps) {
+export function MobileMenu({ id, open, current, copy, availability, toggleRef, onClose, onSectionClick }: MobileMenuProps) {
+  const locale = useLocale();
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,33 +86,33 @@ export function MobileMenu({ id, open, current, toggleRef, onClose, onSectionCli
             exit={{ y: -10 }}
             transition={{ duration: 0.5, ease: ease.outExpo }}
           >
-            <nav aria-label={content.nav.primaryLabel} className="container-page pt-4 pb-8">
+            <nav aria-label={copy.primaryLabel} className="container-page pt-4 pb-8">
               <m.ul
                 className="divide-y divide-line border-y border-line"
                 initial="hidden"
                 animate="visible"
                 variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.05, delayChildren: 0.05 } } }}
               >
-                {navigation.map((item, index) => (
+                {navigationSections.map((item, index) => (
                   <m.li
-                    key={item.id}
+                    key={item}
                     variants={{
                       hidden: { opacity: 0, y: 12 },
                       visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: ease.outExpo } },
                     }}
                   >
                     <Link
-                      href={sectionHref(item.id)}
-                      onClick={(event) => onSectionClick(item.id, event)}
-                      aria-current={current === item.id ? "true" : undefined}
+                      href={sectionHref(locale, item)}
+                      onClick={(event) => onSectionClick(item, event)}
+                      aria-current={current === item ? "true" : undefined}
                       className={cn(
                         "flex items-baseline justify-between py-4 text-[1.75rem] font-medium tracking-tight transition-colors",
-                        current === item.id ? "text-fg" : "text-fg-muted hover:text-fg",
+                        current === item ? "text-fg" : "text-fg-muted hover:text-fg",
                       )}
                     >
-                      {item.label}
-                      <span className={cn("label-mono", current === item.id ? "text-accent" : "text-fg-subtle")}>
-                        {pad(index + 1)}
+                      {copy.items[item]}
+                      <span className={cn("label-mono", current === item ? "text-accent" : "text-fg-subtle")}>
+                        {pad(locale, index + 1)}
                       </span>
                     </Link>
                   </m.li>
@@ -114,15 +120,15 @@ export function MobileMenu({ id, open, current, toggleRef, onClose, onSectionCli
               </m.ul>
               <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
                 <Link
-                  href="/projects"
+                  href={localePath(locale, "/projects")}
                   onClick={() => onClose()}
                   className="label-mono rounded-full border border-line-strong px-4 py-2.5 text-fg transition-colors hover:border-accent/60"
                 >
-                  {content.nav.allProjects}
+                  {copy.allProjects}
                 </Link>
                 <span className="label-mono inline-flex items-center gap-2 text-fg-subtle">
-                  <StatusDot active={profile.availability.available} />
-                  {profile.availability.label}
+                  <StatusDot active={availability.available} />
+                  {availability.label}
                 </span>
               </div>
             </nav>

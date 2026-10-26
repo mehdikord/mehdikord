@@ -20,21 +20,3 @@ export function toSafeExternalUrl(value: string | null | undefined): string | nu
 export function displayUrl(url: string): string {
   return url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
 }
-
-const monthFormatter = new Intl.DateTimeFormat("en", {
-  month: "short",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-/** "2023-06" → "Jun 2023" */
-export function formatYearMonth(value: string): string {
-  const [year, month] = value.split("-").map(Number);
-  if (!year || !month) return value;
-  return monthFormatter.format(new Date(Date.UTC(year, month - 1, 1)));
-}
-
-/** Zero-padded index, e.g. 3 → "03". */
-export function pad(value: number, length = 2): string {
-  return String(value).padStart(length, "0");
-}

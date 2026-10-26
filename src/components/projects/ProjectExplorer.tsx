@@ -5,8 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
 import { ease } from "@/components/motion/motion-variants";
-import { content } from "@/data/content";
-import { cn, pad } from "@/lib/utils";
+import type { Dictionary } from "@/data/dictionaries";
+import { pad } from "@/i18n/format";
+import { useLocale } from "@/i18n/LocaleProvider";
+import { cn } from "@/lib/utils";
 
 export interface ExplorerEntry {
   slug: string;
@@ -24,16 +26,21 @@ export interface ExplorerCategory {
   count: number;
 }
 
+type ExplorerCopy = Pick<
+  Dictionary["projectsPage"],
+  "all" | "filterLabel" | "projectsNoun" | "emptyTitle" | "emptyBody" | "reset"
+>;
+
 interface ProjectExplorerProps {
+  copy: ExplorerCopy;
   entries: readonly ExplorerEntry[];
   categories: readonly ExplorerCategory[];
   activeCategory: string | null;
   onSelect?: (category: string | null) => void;
 }
 
-const copy = content.projectsPage;
-
-export function ProjectExplorer({ entries, categories, activeCategory, onSelect }: ProjectExplorerProps) {
+export function ProjectExplorer({ copy, entries, categories, activeCategory, onSelect }: ProjectExplorerProps) {
+  const locale = useLocale();
   const [hovered, setHovered] = useState<string | null>(null);
 
   const filtered = activeCategory ? entries.filter((entry) => entry.category === activeCategory) : entries;
@@ -61,14 +68,14 @@ export function ProjectExplorer({ entries, categories, activeCategory, onSelect 
               >
                 {filter.label}
                 <span className={cn("font-mono text-[0.6875rem]", selected ? "text-accent" : "text-fg-subtle")}>
-                  {pad(filter.count)}
+                  {pad(locale, filter.count)}
                 </span>
               </button>
             );
           })}
         </div>
         <p aria-live="polite" className="label-mono shrink-0 text-fg-subtle">
-          <span className="text-fg">{pad(filtered.length)}</span> / {pad(entries.length)} {copy.projectsNoun}
+          <span className="text-fg">{pad(locale, filtered.length)}</span> / {pad(locale, entries.length)} {copy.projectsNoun}
         </p>
       </div>
 

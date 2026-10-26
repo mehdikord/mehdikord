@@ -40,7 +40,7 @@ export function HeroContent({ hero, availability }: HeroContentProps) {
             {line.map((segment, segmentIndex) => (
               <span key={segment.text}>
                 {/* Each segment is its own mask: stacked on mobile, inline from md. */}
-                <span className="-mb-[0.12em] block overflow-hidden pb-[0.12em] md:inline-block md:align-bottom">
+                <span className="mask-line md:inline-block md:align-bottom">
                   <m.span
                     className={cn("block", segment.emphasis && "text-accent-serif text-[1.08em] leading-[0.9]")}
                     data-reveal=""

@@ -3,12 +3,15 @@ import { TimelineTrack } from "@/components/experience/TimelineTrack";
 import { Reveal } from "@/components/motion/Reveal";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatusDot } from "@/components/ui/StatusDot";
-import { content } from "@/data/content";
-import { experience } from "@/data/experience";
-import { formatYearMonth } from "@/lib/utils";
+import { getDictionary } from "@/data/dictionaries";
+import { formatYearMonth } from "@/i18n/format";
+import { getLocale } from "@/i18n/server";
+import { getExperience } from "@/lib/career";
 
-export function ExperienceSection() {
-  const copy = content.experience;
+export async function ExperienceSection() {
+  const locale = await getLocale();
+  const copy = getDictionary(locale).experience;
+  const experience = await getExperience(locale);
 
   return (
     <section id="experience" aria-labelledby="experience-title" className="relative border-t border-line py-(--section-y)">
@@ -21,16 +24,16 @@ export function ExperienceSection() {
               {experience.map((entry) => {
                 const isCurrent = entry.end === null;
                 return (
-                  <li key={entry.id} className="relative pl-9 md:grid md:grid-cols-12 md:gap-x-8 md:pl-0">
+                  <li key={entry.id} className="relative ps-9 md:grid md:grid-cols-12 md:gap-x-8 md:ps-0">
                     <TimelineNode current={isCurrent} />
 
                     <Reveal still className="md:col-span-3">
                       <p className="label-mono flex items-center gap-2 text-fg-muted md:flex-col md:items-start md:gap-1.5">
                         <span>
-                          <time dateTime={entry.start}>{formatYearMonth(entry.start)}</time>
+                          <time dateTime={entry.start}>{formatYearMonth(locale, entry.start)}</time>
                           <span aria-hidden> — </span>
                           {entry.end ? (
-                            <time dateTime={entry.end}>{formatYearMonth(entry.end)}</time>
+                            <time dateTime={entry.end}>{formatYearMonth(locale, entry.end)}</time>
                           ) : (
                             <span className="text-fg">{copy.present}</span>
                           )}
@@ -64,7 +67,7 @@ export function ExperienceSection() {
                         </div>
                         <div>
                           <h4 className="label-mono text-fg-subtle">{copy.technologiesLabel}</h4>
-                          <p className="mt-4 font-mono text-[0.8125rem] leading-relaxed text-fg-muted">
+                          <p dir="ltr" className="mt-4 text-start font-mono text-[0.8125rem] leading-relaxed text-fg-muted rtl:text-end">
                             {entry.technologies.join(" · ")}
                           </p>
                         </div>

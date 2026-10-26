@@ -7,7 +7,7 @@ export function TimelineNode({ current }: { current: boolean }) {
   return (
     <m.span
       aria-hidden
-      className="absolute top-2 left-0 block size-[11px] rounded-full border border-accent bg-ink-950 md:left-[25%]"
+      className="absolute start-0 top-2 block size-[11px] rounded-full border border-accent bg-ink-950 md:start-[25%]"
       initial={{ backgroundColor: "#050507", boxShadow: "0 0 0 0 rgb(155 123 255 / 0)" }}
       whileInView={{
         backgroundColor: "#9b7bff",

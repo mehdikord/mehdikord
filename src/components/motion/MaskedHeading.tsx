@@ -25,7 +25,7 @@ export function MaskedHeading({ lines, as = "h2", id, className, interval = 0.09
     <Tag id={id} className={className} initial="hidden" whileInView="visible" viewport={viewportOnce}>
       {lines.map((line, index) => (
         // Padding keeps descenders and italic overhangs inside the mask.
-        <span key={line.text} className="-mb-[0.14em] block overflow-hidden pb-[0.14em]">
+        <span key={line.text} className="mask-line">
           <m.span
             className={cn("block", line.emphasis && "text-accent-serif")}
             data-reveal=""

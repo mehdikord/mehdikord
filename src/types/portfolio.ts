@@ -1,7 +1,9 @@
+import type { strengthIcons } from "@/data/options";
+
 /**
- * Content model for the portfolio. Every piece of personal or project content
- * lives in `src/data/*` and is typed here, so presentation components never
- * hardcode copy.
+ * Content model for the portfolio. Personal and project content is stored in
+ * the database (managed from the admin panel), read through `src/lib/*` and
+ * typed here, so presentation components never hardcode copy.
  */
 
 export interface LinkAction {
@@ -17,6 +19,14 @@ export interface HeadlineSegment {
 }
 
 export type HeadlineLine = readonly HeadlineSegment[];
+
+/** Icon keys for key strengths; mapped to Lucide icons in `StrengthList`. */
+export type StrengthIcon = (typeof strengthIcons)[number];
+
+export interface Strength {
+  icon: StrengthIcon;
+  label: string;
+}
 
 export interface Principle {
   title: string;
@@ -51,7 +61,7 @@ export interface Profile {
   /** Lead paragraph followed by supporting paragraphs. */
   bio: readonly string[];
   philosophy: readonly Principle[];
-  strengths: readonly string[];
+  strengths: readonly Strength[];
   yearsOfExperience: number;
   availability: {
     available: boolean;
@@ -63,6 +73,8 @@ export interface Profile {
     primaryCta: LinkAction;
     secondaryCta: LinkAction;
     signature: readonly string[];
+    /** Background video and its poster. Empty strings fall back to CSS artwork. */
+    media: { video: string; poster: string };
   };
   contact: ContactDetails;
 }
@@ -70,52 +82,34 @@ export interface Profile {
 export interface SiteConfig {
   /** Absolute production URL, used for canonical URLs, sitemap and OG tags. */
   url: string;
-  locale: string;
 }
 
 /* ── Projects ───────────────────────────────────────────────────────────── */
 
-export type ProjectCategoryId =
-  | "crm"
-  | "commerce"
-  | "real-estate"
-  | "saas"
-  | "business"
-  | "data"
-  | "recruitment"
-  | "internal";
+/** Category slug, e.g. "crm". Categories are managed in the admin panel. */
+export type ProjectCategoryId = string;
 
 export interface ProjectCategory {
   id: ProjectCategoryId;
   label: string;
 }
 
-/** A real screenshot placed in `public/projects/<slug>/`. */
+/** Localised project text; everything else is shared across languages. */
+export type ProjectTranslation = Pick<
+  Project,
+  "shortDescription" | "fullDescription" | "role" | "highlights" | "responsibilities"
+> & {
+  /** Only when the product name itself differs by language. */
+  title?: string;
+  caseStudy?: CaseStudy;
+};
+
+/** A real screenshot uploaded from the admin panel. */
 export interface ProjectImage {
   src: string;
   alt: string;
   width: number;
   height: number;
-}
-
-/** Original illustrative compositions used until real screenshots exist. */
-export type PreviewKind =
-  | "crm"
-  | "commerce"
-  | "map"
-  | "billing"
-  | "table"
-  | "analytics"
-  | "recruiting"
-  | "workflow";
-
-export type PreviewAccent = "violet" | "indigo" | "iris" | "orchid" | "azure";
-
-export interface ProjectPreview {
-  kind: PreviewKind;
-  accent: PreviewAccent;
-  /** Light UI theme, used for products with a light interface. */
-  light?: boolean;
 }
 
 export interface CaseStudyNote {
@@ -139,6 +133,8 @@ export interface Project {
   /** One or more paragraphs. */
   fullDescription: readonly string[];
   category: ProjectCategoryId;
+  /** Category name in the current language. */
+  categoryLabel: string;
   role: string;
   /** Display period, e.g. "2024" or "2022 — 2023". */
   period: string;
@@ -146,14 +142,13 @@ export interface Project {
   /** Public URL of the live product. Empty string when not public. */
   liveUrl: string;
   featured: boolean;
-  /** Real cover screenshot. `null` falls back to the illustrative preview. */
+  /** Uploaded cover screenshot. `null` falls back to the default website image. */
   coverImage: ProjectImage | null;
   gallery: readonly ProjectImage[];
   highlights: readonly string[];
   responsibilities: readonly string[];
   caseStudyAvailable: boolean;
   caseStudy?: CaseStudy;
-  preview: ProjectPreview;
 }
 
 /* ── Experience & skills ────────────────────────────────────────────────── */
@@ -180,3 +175,10 @@ export interface SkillGroup {
   annotation: string;
   items: readonly string[];
 }
+
+export type ExperienceTranslation = Pick<
+  ExperienceEntry,
+  "company" | "companyContext" | "position" | "location" | "description" | "responsibilities"
+>;
+
+export type SkillGroupTranslation = Pick<SkillGroup, "title" | "annotation" | "items">;

@@ -1,67 +1,128 @@
-import { projectCategories, projects } from "@/data/projects";
+import { cacheLife, cacheTag } from "next/cache";
+
+import { defaultLocale, type Locale } from "@/i18n/config";
+import { contentTags } from "@/lib/content-tags";
+import { jsonNotes, jsonStrings, pickTranslation } from "@/lib/translations";
 import { toSafeExternalUrl } from "@/lib/utils";
-import type { CaseStudy, Project, ProjectCategory, ProjectCategoryId } from "@/types/portfolio";
+import { db } from "@/server/db";
+import type { CaseStudy, Project, ProjectCategory, ProjectImage } from "@/types/portfolio";
 
-/** Fails loudly during development and builds when the catalogue is malformed. */
-function assertCatalogueIntegrity(list: readonly Project[]): void {
-  const slugs = new Set<string>();
-  const ids = new Set<string>();
-  const categoryIds = new Set(projectCategories.map((category) => category.id));
+export { MISSING_PROJECT_SLUG } from "@/lib/project-slugs";
 
-  for (const project of list) {
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(project.slug)) {
-      throw new Error(`Project "${project.id}" has an invalid slug: "${project.slug}"`);
-    }
-    if (slugs.has(project.slug)) throw new Error(`Duplicate project slug: "${project.slug}"`);
-    if (ids.has(project.id)) throw new Error(`Duplicate project id: "${project.id}"`);
-    if (!categoryIds.has(project.category)) {
-      throw new Error(`Project "${project.slug}" uses unknown category "${project.category}"`);
-    }
-    if (project.liveUrl && !toSafeExternalUrl(project.liveUrl)) {
-      throw new Error(`Project "${project.slug}" has an invalid liveUrl: "${project.liveUrl}"`);
-    }
-    slugs.add(project.slug);
-    ids.add(project.id);
-  }
+interface Catalogue {
+  /** Display order. */
+  projects: Project[];
+  /** Every category in configured order, used or not. */
+  categories: ProjectCategory[];
 }
 
-assertCatalogueIntegrity(projects);
+/** The whole catalogue in one language, cached until the admin panel changes it. */
+async function getCatalogue(locale: Locale): Promise<Catalogue> {
+  "use cache";
+  cacheTag(contentTags.projects);
+  cacheLife("max");
 
-export function getAllProjects(): readonly Project[] {
-  return projects;
+  const [rows, categoryRows] = await Promise.all([
+    db.project.findMany({
+      include: {
+        translations: true,
+        category: true,
+        images: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] },
+      },
+      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    }),
+    db.projectCategory.findMany({ include: { translations: true }, orderBy: [{ sortOrder: "asc" }, { id: "asc" }] }),
+  ]);
+
+  const categories = categoryRows.map((category) => ({
+    id: category.slug,
+    label: pickTranslation(category.translations, locale)?.label ?? category.slug,
+  }));
+  const labels = new Map(categories.map((category) => [category.id, category.label]));
+
+  const projects = rows.flatMap((row): Project[] => {
+    const text = pickTranslation(row.translations, locale);
+    if (!text) return [];
+
+    const images: ProjectImage[] = row.images.map((image) => ({
+      src: image.path,
+      alt: image.alt || text.title,
+      width: image.width,
+      height: image.height,
+    }));
+    const coverIndex = row.images.findIndex((image) => image.isCover);
+
+    return [
+      {
+        id: String(row.id),
+        slug: row.slug,
+        title: text.title,
+        shortDescription: text.shortDescription,
+        fullDescription: jsonStrings(text.fullDescription),
+        category: row.category.slug,
+        categoryLabel: labels.get(row.category.slug) ?? row.category.slug,
+        role: text.role,
+        period: row.period,
+        technologies: jsonStrings(row.technologies),
+        liveUrl: row.liveUrl,
+        featured: row.isFeatured,
+        coverImage: images[coverIndex] ?? null,
+        gallery: images.filter((_, index) => index !== coverIndex),
+        highlights: jsonStrings(text.highlights),
+        responsibilities: jsonStrings(text.responsibilities),
+        caseStudyAvailable: row.caseStudyAvailable,
+        caseStudy: text.caseStudyContext
+          ? {
+              context: text.caseStudyContext,
+              challenges: jsonNotes(text.caseStudyChallenges),
+              decisions: jsonNotes(text.caseStudyDecisions),
+              implementation: jsonStrings(text.caseStudyImplementation),
+            }
+          : undefined,
+      },
+    ];
+  });
+
+  return { projects, categories };
 }
 
-export function getFeaturedProjects(): readonly Project[] {
-  return projects.filter((project) => project.featured);
+export async function getAllProjects(locale: Locale): Promise<readonly Project[]> {
+  return (await getCatalogue(locale)).projects;
 }
 
-export function getProjectBySlug(slug: string): Project | undefined {
-  return projects.find((project) => project.slug === slug);
+export async function getFeaturedProjects(locale: Locale): Promise<readonly Project[]> {
+  return (await getAllProjects(locale)).filter((project) => project.featured);
+}
+
+export async function getProjectBySlug(locale: Locale, slug: string): Promise<Project | undefined> {
+  return (await getAllProjects(locale)).find((project) => project.slug === slug);
+}
+
+/** Every slug, for static generation. Slugs are shared by all languages. */
+export async function getProjectSlugs(): Promise<string[]> {
+  return (await getAllProjects(defaultLocale)).map((project) => project.slug);
+}
+
+/** Position of a project in display order. */
+export async function getProjectIndex(slug: string): Promise<number> {
+  return (await getAllProjects(defaultLocale)).findIndex((project) => project.slug === slug);
 }
 
 /** Previous and next projects in display order, wrapping around. */
-export function getAdjacentProjects(slug: string): { previous: Project; next: Project } | null {
-  const index = projects.findIndex((project) => project.slug === slug);
-  if (index === -1 || projects.length < 2) return null;
-  const previous = projects[(index - 1 + projects.length) % projects.length];
-  const next = projects[(index + 1) % projects.length];
+export async function getAdjacentProjects(locale: Locale, slug: string): Promise<{ previous: Project; next: Project } | null> {
+  const list = await getAllProjects(locale);
+  const index = list.findIndex((project) => project.slug === slug);
+  if (index === -1 || list.length < 2) return null;
+  const previous = list[(index - 1 + list.length) % list.length];
+  const next = list[(index + 1) % list.length];
   return previous && next ? { previous, next } : null;
 }
 
-const categoryById = new Map(projectCategories.map((category) => [category.id, category]));
-
-export function getCategoryLabel(id: ProjectCategoryId): string {
-  return categoryById.get(id)?.label ?? id;
-}
-
 /** Categories that contain at least one project, in configured order. */
-export function getUsedCategories(): readonly ProjectCategory[] {
+export async function getUsedCategories(locale: Locale): Promise<readonly ProjectCategory[]> {
+  const { projects, categories } = await getCatalogue(locale);
   const used = new Set(projects.map((project) => project.category));
-  return projectCategories.filter((category) => used.has(category.id));
-}
-
-export function isProjectCategory(value: string): value is ProjectCategoryId {
-  return categoryById.has(value as ProjectCategoryId);
+  return categories.filter((category) => used.has(category.id));
 }
 
 /**

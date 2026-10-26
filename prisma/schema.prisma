@@ -1,0 +1,299 @@
+// Database schema for the portfolio and its admin panel.
+//
+// Conventions follow Laravel: snake_case plural table names, `BIGINT UNSIGNED`
+// auto-increment ids and foreign keys, and `created_at` / `updated_at` on
+// every table. Language-specific text lives in a `*_translations` table per
+// entity (one row per locale), everything else on the parent row.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+/* ── Admin ──────────────────────────────────────────────────────────────── */
+
+model User {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  name      String   @db.VarChar(255)
+  phone     String   @unique @db.VarChar(20)
+  password  String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@map("users")
+}
+
+/* ── Profile (single row) ───────────────────────────────────────────────── */
+
+model Profile {
+  id                BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  initials          String   @db.VarChar(8)
+  yearsOfExperience Int      @default(0) @map("years_of_experience") @db.UnsignedInt
+  isAvailable       Boolean  @default(true) @map("is_available")
+  email             String   @default("") @db.VarChar(255)
+  phone             String   @default("") @db.VarChar(32)
+  telegram          String   @default("") @db.VarChar(255)
+  linkedin          String   @default("") @db.VarChar(255)
+  instagram         String   @default("") @db.VarChar(255)
+  heroVideoUrl      String   @default("") @map("hero_video_url") @db.VarChar(1024)
+  heroPosterUrl     String   @default("") @map("hero_poster_url") @db.VarChar(1024)
+  primaryCtaHref    String   @default("#work") @map("primary_cta_href") @db.VarChar(255)
+  secondaryCtaHref  String   @default("#contact") @map("secondary_cta_href") @db.VarChar(255)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  translations ProfileTranslation[]
+
+  @@map("profiles")
+}
+
+model ProfileTranslation {
+  id                BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  profileId         BigInt   @map("profile_id") @db.UnsignedBigInt
+  locale            String   @db.VarChar(5)
+  name              String   @db.VarChar(255)
+  title             String   @db.VarChar(255)
+  location          String   @db.VarChar(255)
+  summary           String   @db.Text
+  /// string[] — lead paragraph first.
+  bio               Json
+  availabilityLabel String   @map("availability_label") @db.VarChar(255)
+  /// { text: string; emphasis?: boolean }[][] — one array per visual line.
+  heroHeadline      Json     @map("hero_headline")
+  heroDescription   String   @map("hero_description") @db.Text
+  primaryCtaLabel   String   @map("primary_cta_label") @db.VarChar(255)
+  secondaryCtaLabel String   @map("secondary_cta_label") @db.VarChar(255)
+  /// string[]
+  signature         Json
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, locale])
+  @@map("profile_translations")
+}
+
+/* ── About: engineering philosophy and key strengths ────────────────────── */
+
+model Principle {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  sortOrder Int      @default(0) @map("sort_order") @db.UnsignedInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  translations PrincipleTranslation[]
+
+  @@map("principles")
+}
+
+model PrincipleTranslation {
+  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  principleId BigInt   @map("principle_id") @db.UnsignedBigInt
+  locale      String   @db.VarChar(5)
+  title       String   @db.VarChar(255)
+  body        String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  principle Principle @relation(fields: [principleId], references: [id], onDelete: Cascade)
+
+  @@unique([principleId, locale])
+  @@map("principle_translations")
+}
+
+model Strength {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  icon      String   @db.VarChar(32)
+  sortOrder Int      @default(0) @map("sort_order") @db.UnsignedInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  translations StrengthTranslation[]
+
+  @@map("strengths")
+}
+
+model StrengthTranslation {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  strengthId BigInt   @map("strength_id") @db.UnsignedBigInt
+  locale     String   @db.VarChar(5)
+  label      String   @db.VarChar(255)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  strength Strength @relation(fields: [strengthId], references: [id], onDelete: Cascade)
+
+  @@unique([strengthId, locale])
+  @@map("strength_translations")
+}
+
+/* ── Projects ───────────────────────────────────────────────────────────── */
+
+model ProjectCategory {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  slug      String   @unique @db.VarChar(64)
+  sortOrder Int      @default(0) @map("sort_order") @db.UnsignedInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  translations ProjectCategoryTranslation[]
+  projects     Project[]
+
+  @@map("project_categories")
+}
+
+model ProjectCategoryTranslation {
+  id                BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  projectCategoryId BigInt   @map("project_category_id") @db.UnsignedBigInt
+  locale            String   @db.VarChar(5)
+  label             String   @db.VarChar(255)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  category ProjectCategory @relation(fields: [projectCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([projectCategoryId, locale])
+  @@map("project_category_translations")
+}
+
+model Project {
+  id                 BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  projectCategoryId  BigInt   @map("project_category_id") @db.UnsignedBigInt
+  slug               String   @unique @db.VarChar(128)
+  period             String   @db.VarChar(64)
+  /// string[]
+  technologies       Json
+  liveUrl            String   @default("") @map("live_url") @db.VarChar(1024)
+  isFeatured         Boolean  @default(false) @map("is_featured")
+  caseStudyAvailable Boolean  @default(false) @map("case_study_available")
+  sortOrder          Int      @default(0) @map("sort_order") @db.UnsignedInt
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  category     ProjectCategory      @relation(fields: [projectCategoryId], references: [id], onDelete: Restrict)
+  translations ProjectTranslation[]
+  images       ProjectImage[]
+
+  @@index([projectCategoryId])
+  @@map("projects")
+}
+
+model ProjectTranslation {
+  id                       BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  projectId                BigInt   @map("project_id") @db.UnsignedBigInt
+  locale                   String   @db.VarChar(5)
+  title                    String   @db.VarChar(255)
+  shortDescription         String   @map("short_description") @db.Text
+  /// string[] — one entry per paragraph.
+  fullDescription          Json     @map("full_description")
+  role                     String   @db.VarChar(255)
+  /// string[]
+  highlights               Json
+  /// string[]
+  responsibilities         Json
+  caseStudyContext         String?  @map("case_study_context") @db.Text
+  /// { title: string; detail: string }[]
+  caseStudyChallenges      Json?    @map("case_study_challenges")
+  /// { title: string; detail: string }[]
+  caseStudyDecisions       Json?    @map("case_study_decisions")
+  /// string[]
+  caseStudyImplementation  Json?    @map("case_study_implementation")
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt                DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, locale])
+  @@map("project_translations")
+}
+
+model ProjectImage {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  projectId BigInt   @map("project_id") @db.UnsignedBigInt
+  /// Public URL path, e.g. "/uploads/projects/atlas-crm/cover.webp".
+  path      String   @db.VarChar(1024)
+  alt       String   @default("") @db.VarChar(255)
+  width     Int      @db.UnsignedInt
+  height    Int      @db.UnsignedInt
+  isCover   Boolean  @default(false) @map("is_cover")
+  sortOrder Int      @default(0) @map("sort_order") @db.UnsignedInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_images")
+}
+
+/* ── Experience & skills ────────────────────────────────────────────────── */
+
+model Experience {
+  id           BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  /// "YYYY-MM"
+  startMonth   String   @map("start_month") @db.Char(7)
+  /// "YYYY-MM", or NULL for a current role.
+  endMonth     String?  @map("end_month") @db.Char(7)
+  /// string[]
+  technologies Json
+  sortOrder    Int      @default(0) @map("sort_order") @db.UnsignedInt
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  translations ExperienceTranslation[]
+
+  @@map("experiences")
+}
+
+model ExperienceTranslation {
+  id               BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  experienceId     BigInt   @map("experience_id") @db.UnsignedBigInt
+  locale           String   @db.VarChar(5)
+  company          String   @db.VarChar(255)
+  companyContext   String   @default("") @map("company_context") @db.VarChar(255)
+  position         String   @db.VarChar(255)
+  location         String   @default("") @db.VarChar(255)
+  description      String   @db.Text
+  /// string[]
+  responsibilities Json
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  experience Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  @@unique([experienceId, locale])
+  @@map("experience_translations")
+}
+
+model SkillGroup {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  sortOrder Int      @default(0) @map("sort_order") @db.UnsignedInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  translations SkillGroupTranslation[]
+
+  @@map("skill_groups")
+}
+
+model SkillGroupTranslation {
+  id           BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  skillGroupId BigInt   @map("skill_group_id") @db.UnsignedBigInt
+  locale       String   @db.VarChar(5)
+  title        String   @db.VarChar(255)
+  annotation   String   @default("") @db.VarChar(255)
+  /// string[]
+  items        Json
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  skillGroup SkillGroup @relation(fields: [skillGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([skillGroupId, locale])
+  @@map("skill_group_translations")
+}

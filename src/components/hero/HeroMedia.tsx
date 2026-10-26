@@ -39,7 +39,7 @@ export function HeroMedia({ video, poster }: HeroMediaProps) {
   const [status, setStatus] = useState<VideoStatus>("idle");
 
   // `null` until the preference is known on the client — don't start early.
-  const enabled = reduceMotion === false && status !== "failed";
+  const enabled = Boolean(video) && reduceMotion === false && status !== "failed";
 
   const handlePlaying = useCallback(() => setStatus("playing"), []);
   const handleFailure = useCallback(() => setStatus("failed"), []);
@@ -57,7 +57,7 @@ export function HeroMedia({ video, poster }: HeroMediaProps) {
     <div ref={containerRef} aria-hidden className="absolute inset-0 overflow-hidden bg-ink-950">
       <HeroFallbackArt />
 
-      {!posterFailed ? (
+      {poster && !posterFailed ? (
         <Image
           src={poster}
           alt=""
@@ -76,8 +76,8 @@ export function HeroMedia({ video, poster }: HeroMediaProps) {
           videoVisible ? "opacity-100" : "opacity-0",
         )}
       >
-        <video ref={firstRef} {...videoProps} poster={poster} />
-        <video ref={secondRef} {...videoProps} poster={poster} />
+        <video ref={firstRef} {...videoProps} poster={poster || undefined} />
+        <video ref={secondRef} {...videoProps} poster={poster || undefined} />
       </div>
 
       {/* Legibility: top shade for the navigation, central scrim, bottom fade into the page. */}
