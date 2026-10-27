@@ -8,15 +8,16 @@ const admin = {
   password: "Mehdi137615",
 };
 
-/** Creates the site administrator, or resets its name and password if it exists. */
+/**
+ * Creates the site administrator when it doesn't exist yet. An existing admin
+ * is left untouched, so seeding on every deploy (`pnpm build`) never resets it.
+ */
 export async function adminUserSeeder(db: PrismaClient): Promise<void> {
-  const password = await hash(admin.password, 12);
+  if (await db.user.findUnique({ where: { phone: admin.phone }, select: { id: true } })) {
+    console.log(`  - admin user ${admin.phone}: already exists, skipped`);
+    return;
+  }
 
-  await db.user.upsert({
-    where: { phone: admin.phone },
-    create: { name: admin.name, phone: admin.phone, password },
-    update: { name: admin.name, password },
-  });
-
+  await db.user.create({ data: { name: admin.name, phone: admin.phone, password: await hash(admin.password, 12) } });
   console.log(`  ✓ admin user ${admin.phone}`);
 }

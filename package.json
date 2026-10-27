@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "pnpm db:setup && next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
@@ -13,7 +13,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:fresh": "prisma migrate reset --force",
-    "db:status": "prisma migrate status"
+    "db:status": "prisma migrate status",
+    "db:setup": "prisma migrate deploy && prisma db seed"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "7.10.1",

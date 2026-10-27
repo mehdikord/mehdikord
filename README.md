@@ -9,12 +9,13 @@ Requires MySQL 8 and an empty database.
 ```bash
 cp .env.example .env   # fill in DB_* and AUTH_SECRET (openssl rand -base64 32)
 pnpm install           # also generates the Prisma client
-pnpm db:migrate        # apply migrations (prisma migrate deploy)
-pnpm db:seed           # admin user + the initial site content
+pnpm db:setup          # apply migrations + seed (admin user and initial content)
 pnpm dev               # http://localhost:3000
-pnpm build && pnpm start   # production (the build reads content from the database)
+pnpm build && pnpm start   # production
 pnpm check             # typecheck + lint + production build
 ```
+
+`pnpm build` runs `db:setup` first, because pages are prerendered from the database: on a new server it creates the tables, the admin user and the initial content; on later deploys it only applies new migrations (the seeders skip anything that already exists). The database must exist and the `DB_*` user needs permission to create and alter tables.
 
 `pnpm db:fresh` drops every table, re-runs the migrations and seeds again (like `migrate:fresh --seed`). `pnpm db:status` shows applied migrations.
 
@@ -37,7 +38,7 @@ Unprefixed URLs (`/`, `/projects`, …) are redirected by `src/proxy.ts`: an exp
 
 All site content lives in MySQL and is edited at `/administrator`: profile and hero, engineering principles, key strengths, project categories, projects (with case studies and uploaded screenshots), experience and skill groups. Every entry is edited in both languages in one modal. Saving expires the cached public pages, so changes are live on the next visit.
 
-- **Admin user.** `prisma/seeders/admin-user-seeder.ts` creates the administrator (re-running it resets that user's name and password).
+- **Admin user.** `prisma/seeders/admin-user-seeder.ts` creates the administrator if it doesn't exist; an existing admin is never changed.
 - **Initial content.** `prisma/seeders/content-seeder.ts` imports the placeholder content in `prisma/seeders/data/`. Each part is skipped when its table already has rows, so seeding again never overwrites edits.
 - **Project images.** Upload a screenshot in the project modal; it fills the same frames as before (cropped from the top, ideally 1600×1000 / 16:10). Without one, `public/images/project-placeholder.svg` is shown. Extra images go to the project page gallery via the “گالری” button.
 - **Uploads** are stored in `storage/uploads/` (not committed) and served from `/uploads/...`. Back this folder up with the database.
