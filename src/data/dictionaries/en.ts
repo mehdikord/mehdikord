@@ -73,6 +73,10 @@ export const en = {
     label: "Expertise",
     title: [{ text: "Technical" }, { text: "range.", emphasis: true }] as Title,
     intro: "The tools and practices I reach for, grouped by the problems they solve.",
+    moduleLabel: "Module",
+    capabilities: "{count} capabilities",
+    listLabel: "Areas of expertise",
+    stageLabel: "Capabilities in {title}",
   },
   experience: {
     index: "04",

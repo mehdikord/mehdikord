@@ -1,7 +1,6 @@
-import { RevealGroup, RevealItem } from "@/components/motion/Reveal";
+import { ExpertiseExplorer } from "@/components/expertise/ExpertiseExplorer";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { getDictionary } from "@/data/dictionaries";
-import { pad } from "@/i18n/format";
 import { getLocale } from "@/i18n/server";
 import { getSkillGroups } from "@/lib/career";
 
@@ -12,38 +11,19 @@ export async function ExpertiseSection() {
 
   return (
     <section id="expertise" aria-labelledby="expertise-title" className="relative border-t border-line py-(--section-y)">
-      <div className="container-page">
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[60%] bg-[radial-gradient(ellipse_50%_60%_at_80%_40%,rgb(130_87_255/0.1),transparent_70%)] rtl:bg-[radial-gradient(ellipse_50%_60%_at_20%_40%,rgb(130_87_255/0.1),transparent_70%)]" />
+      <div className="container-page relative">
         <SectionHeader index={copy.index} label={copy.label} title={copy.title} titleId="expertise-title" intro={copy.intro} />
-
-        <RevealGroup as="ul" className="mt-16 grid border-s border-t border-line sm:grid-cols-2 lg:grid-cols-3 md:mt-20">
-          {skillGroups.map((group, index) => (
-            <RevealItem
-              as="li"
-              key={group.id}
-              className="group relative border-e border-b border-line p-6 transition-colors duration-500 hover:bg-white/[0.02] sm:p-8"
-            >
-              <span
-                aria-hidden
-                className="absolute inset-x-0 top-0 h-px origin-left scale-x-0 bg-gradient-to-r from-accent to-transparent rtl:origin-right rtl:bg-gradient-to-l transition-transform duration-700 ease-out-expo group-hover:scale-x-100"
-              />
-              <div className="label-mono flex items-center justify-between text-fg-subtle">
-                <span className="transition-colors duration-300 group-hover:text-accent">
-                  {copy.index}.{pad(locale, index + 1)}
-                </span>
-                <span>{group.annotation}</span>
-              </div>
-              <h3 className="mt-8 text-xl font-medium tracking-tight">{group.title}</h3>
-              <ul className="mt-5 space-y-2 text-[0.9375rem] text-fg-muted">
-                {group.items.map((item) => (
-                  <li key={item} className="flex items-baseline gap-3">
-                    <span aria-hidden className="h-px w-3 shrink-0 translate-y-[-0.25em] bg-line-strong transition-colors duration-300 group-hover:bg-accent/60" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </RevealItem>
-          ))}
-        </RevealGroup>
+        <ExpertiseExplorer
+          groups={skillGroups}
+          copy={{
+            index: copy.index,
+            moduleLabel: copy.moduleLabel,
+            capabilities: copy.capabilities,
+            listLabel: copy.listLabel,
+            stageLabel: copy.stageLabel,
+          }}
+        />
       </div>
     </section>
   );

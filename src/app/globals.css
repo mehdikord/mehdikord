@@ -318,6 +318,244 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
+   Hero — infrastructure stage
+   Pointer position arrives as `--mx` / `--my` (pixels) and `--spot-a`
+   (0 or 1) on `.hero-stage`, written by HeroStage without re-rendering.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@utility hero-title {
+  font-size: clamp(2.75rem, 1.35rem + 5.2vw, 5.75rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  font-weight: 600;
+}
+
+.hero-stage {
+  --mx: 50%;
+  --my: 40%;
+  --spot-a: 0;
+}
+
+/* Light that follows the pointer across the whole stage. */
+.hero-spot {
+  background: radial-gradient(
+    30rem circle at var(--mx) var(--my),
+    rgb(130 87 255 / 0.16),
+    rgb(130 87 255 / 0.05) 40%,
+    transparent 70%
+  );
+  opacity: var(--spot-a);
+  transition: opacity 700ms var(--ease-out-quart);
+  pointer-events: none;
+}
+
+@keyframes hero-aurora {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(5%, -4%, 0) scale(1.1);
+  }
+}
+
+.hero-aurora {
+  animation: hero-aurora 18s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Perspective floor grid rolling toward the viewer. */
+@keyframes hero-floor {
+  to {
+    background-position: 0 64px;
+  }
+}
+
+.hero-floor {
+  position: absolute;
+  inset-inline: -25%;
+  top: 0;
+  height: 170%;
+  background-image:
+    linear-gradient(to right, rgb(155 123 255 / 0.18) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(155 123 255 / 0.18) 1px, transparent 1px);
+  background-size: 64px 64px;
+  transform: perspective(60rem) rotateX(64deg);
+  transform-origin: 50% 0;
+  mask-image: linear-gradient(to bottom, transparent, #000 20%, #000 65%, transparent);
+  animation: hero-floor 2.4s linear infinite;
+  will-change: background-position;
+}
+
+/* Glass panels (hero scene, expertise stage). */
+.glass-card {
+  position: relative;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-line);
+  background: linear-gradient(180deg, rgb(19 19 27 / 0.9), rgb(9 9 13 / 0.94));
+  box-shadow: var(--shadow-frame);
+  backdrop-filter: blur(14px);
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent 8%, rgb(255 255 255 / 0.28), transparent 92%);
+  pointer-events: none;
+}
+
+@keyframes led-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.hero-led {
+  animation: led-blink 1.8s ease-in-out infinite;
+}
+
+/* CPU gauge inside the app nodes: a breathing bar, cycle length set per node. */
+@keyframes cpu-load {
+  0% {
+    transform: scaleX(0.32);
+  }
+  30% {
+    transform: scaleX(0.82);
+  }
+  55% {
+    transform: scaleX(0.46);
+  }
+  80% {
+    transform: scaleX(0.68);
+  }
+  100% {
+    transform: scaleX(0.32);
+  }
+}
+
+.hero-cpu {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: cpu-load 5s ease-in-out infinite;
+}
+
+/* Monitoring sweep across the cluster panel. */
+@keyframes hero-scan {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(260%);
+  }
+}
+
+.hero-scan {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 40%;
+  background: linear-gradient(to bottom, transparent, rgb(155 123 255 / 0.05) 60%, rgb(155 123 255 / 0.12));
+  border-bottom: 1px solid rgb(155 123 255 / 0.28);
+  animation: hero-scan 7s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.hero-caret {
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-aurora,
+  .hero-floor,
+  .hero-led,
+  .hero-cpu,
+  .hero-scan,
+  .hero-caret {
+    animation: none;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Expertise — orbital stage
+   ────────────────────────────────────────────────────────────────────────── */
+
+@keyframes orbit {
+  to {
+    rotate: 1turn;
+  }
+}
+
+@keyframes orbit-reverse {
+  to {
+    rotate: -1turn;
+  }
+}
+
+.orbit-layer {
+  animation: orbit 140s linear infinite;
+}
+
+/* Satellites turn against the orbit so their labels stay upright. */
+.orbit-node {
+  animation: orbit-reverse 140s linear infinite;
+}
+
+.orbit-stage:hover .orbit-layer,
+.orbit-stage:hover .orbit-node {
+  animation-play-state: paused;
+}
+
+/* Radar sweep, clipped to the outer orbit. */
+.orbit-sweep {
+  background: conic-gradient(from 0deg, transparent 0 80%, rgb(155 123 255 / 0.08) 95%, rgb(155 123 255 / 0.22) 100%);
+  mask-image: radial-gradient(circle at center, #000 45.5%, transparent 46%);
+  animation: orbit 9s linear infinite;
+  pointer-events: none;
+}
+
+/* Expanding ring around the core. */
+.orbit-core-pulse {
+  animation: pulse-ring 3s var(--ease-out-quart) infinite;
+}
+
+/* Autoplay countdown under the selected area. */
+@keyframes expertise-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.expertise-progress {
+  animation: expertise-progress 5.2s linear forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-layer,
+  .orbit-node,
+  .orbit-sweep,
+  .orbit-core-pulse,
+  .expertise-progress {
+    animation: none;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
    Persian (right-to-left)
    Persian script is connected: letter-spacing breaks the joins and uppercase
    doesn't exist, so both are neutralised. Glyph dots and descenders need more

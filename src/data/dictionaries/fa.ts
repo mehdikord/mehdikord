@@ -66,6 +66,10 @@ export const fa: Dictionary = {
     label: "تخصص",
     title: [{ text: "گستره" }, { text: "فنی.", emphasis: true }],
     intro: "ابزارها و روش‌هایی که به کار می‌گیرم، دسته‌بندی‌شده بر اساس مسئله‌ای که حل می‌کنند.",
+    moduleLabel: "ماژول",
+    capabilities: "{count} قابلیت",
+    listLabel: "حوزه‌های تخصص",
+    stageLabel: "قابلیت‌های {title}",
   },
   experience: {
     index: "۰۴",

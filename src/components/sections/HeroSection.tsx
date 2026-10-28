@@ -1,6 +1,4 @@
-import { HeroContent } from "@/components/hero/HeroContent";
-import { HeroMedia } from "@/components/hero/HeroMedia";
-import { HeroMeta } from "@/components/hero/HeroMeta";
+import { HeroStage } from "@/components/hero/HeroStage";
 import { getDictionary } from "@/data/dictionaries";
 import { localizeDigits } from "@/i18n/format";
 import { getLocale } from "@/i18n/server";
@@ -12,19 +10,19 @@ export async function HeroSection() {
   const copy = getDictionary(locale).hero;
 
   return (
-    <section id="top" aria-labelledby="hero-title" className="relative isolate flex min-h-svh flex-col overflow-hidden">
-      <HeroMedia video={profile.hero.media.video} poster={profile.hero.media.poster} />
-
-      <div className="container-page relative z-10 flex flex-1 flex-col items-center justify-center pt-[calc(var(--nav-h)+2.5rem)] pb-12 [@media(max-height:520px)]:pt-[calc(var(--nav-h)+1rem)]">
-        <HeroContent hero={profile.hero} availability={profile.availability} />
-      </div>
-
-      <HeroMeta
-        years={`${localizeDigits(locale, profile.yearsOfExperience)}+`}
-        signature={profile.hero.signature}
-        scrollCue={copy.scrollCue}
-        yearsSuffix={copy.yearsSuffix}
-      />
-    </section>
+    <HeroStage
+      kicker={profile.title}
+      headline={profile.hero.headline}
+      description={profile.hero.description}
+      primaryCta={profile.hero.primaryCta}
+      secondaryCta={profile.hero.secondaryCta}
+      availability={profile.availability}
+      rail={{
+        years: `${localizeDigits(locale, profile.yearsOfExperience)}+`,
+        yearsSuffix: copy.yearsSuffix,
+        signature: profile.hero.signature,
+        scrollCue: copy.scrollCue,
+      }}
+    />
   );
 }
