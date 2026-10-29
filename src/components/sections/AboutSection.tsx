@@ -1,5 +1,5 @@
 import { ArchitectureDiagram } from "@/components/about/ArchitectureDiagram";
-import { StrengthList } from "@/components/about/StrengthList";
+import { StrengthBoard } from "@/components/about/StrengthBoard";
 import { Reveal, RevealGroup, RevealItem } from "@/components/motion/Reveal";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { getDictionary } from "@/data/dictionaries";
@@ -100,7 +100,11 @@ export async function AboutSection() {
             <p className="mt-4 max-w-xs text-sm text-pretty text-fg-muted">{copy.strengthsIntro}</p>
           </Reveal>
           <div className="lg:col-span-9">
-            <StrengthList strengths={profile.strengths} />
+            <StrengthBoard
+              strengths={profile.strengths}
+              coreLabel={copy.coreStrength}
+              coreMeta={`${localizeDigits(locale, profile.yearsOfExperience)}+ · ${copy.stats.years}`}
+            />
           </div>
         </div>
       </div>

@@ -59,7 +59,7 @@ export function ArchitectureDiagram() {
       whileInView="visible"
       viewport={viewportOnce}
     >
-      <g fill="none" stroke="rgb(255 255 255 / 0.16)" strokeWidth={1}>
+      <g fill="none" style={{ stroke: "var(--color-line-strong)" }} strokeWidth={1}>
         {edges.map((d, index) => (
           <m.path
             key={d}
@@ -77,9 +77,9 @@ export function ArchitectureDiagram() {
         <path d="M86 436V470" strokeDasharray="3 4" />
       </g>
 
-      <g fill="none" stroke="#9b7bff" strokeWidth={1.25} strokeLinecap="round">
+      <g fill="none" strokeWidth={1.25} strokeLinecap="round">
         {flows.map((d) => (
-          <path key={d} d={d} className="flow-line" opacity={0.85} />
+          <path key={d} d={d} className="flow-line" opacity={0.85} style={{ stroke: "var(--color-accent)" }} />
         ))}
       </g>
 
@@ -101,8 +101,11 @@ export function ArchitectureDiagram() {
             width={node.w}
             height={node.h}
             rx={5}
-            fill={node.accent ? "rgb(155 123 255 / 0.08)" : "#0b0b10"}
-            stroke={node.accent ? "rgb(155 123 255 / 0.55)" : "rgb(255 255 255 / 0.14)"}
+            style={{
+              fill: node.accent ? "var(--color-accent-soft)" : "var(--color-ink-900)",
+              stroke: node.accent ? "var(--color-accent)" : "var(--color-line-strong)",
+              strokeOpacity: node.accent ? 0.6 : 1,
+            }}
           />
           <text
             x={node.x + 12}
@@ -116,7 +119,7 @@ export function ArchitectureDiagram() {
           <text x={node.x + 12} y={node.y + 33} className="fill-fg-subtle font-mono" fontSize={9}>
             {node.sub}
           </text>
-          {node.accent ? <circle cx={node.x + node.w - 12} cy={node.y + 15} r={2.5} fill="#4ade80" /> : null}
+          {node.accent ? <circle cx={node.x + node.w - 12} cy={node.y + 15} r={2.5} style={{ fill: "var(--color-signal)" }} /> : null}
         </m.g>
       ))}
     </m.svg>

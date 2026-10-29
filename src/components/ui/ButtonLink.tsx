@@ -26,7 +26,7 @@ const variants: Record<Variant, string> = {
   primary:
     "h-12 gap-3 rounded-full bg-fg ps-6 pe-1.5 text-[0.9375rem] font-medium text-ink-950 hover:shadow-glow",
   secondary:
-    "h-12 gap-2.5 rounded-full border border-line-strong bg-white/[0.03] px-6 text-[0.9375rem] font-medium text-fg backdrop-blur-sm hover:border-accent/60 hover:bg-accent-soft",
+    "h-12 gap-2.5 rounded-full border border-line-strong bg-tint/[0.03] px-6 text-[0.9375rem] font-medium text-fg backdrop-blur-sm hover:border-accent/60 hover:bg-accent-soft",
   ghost:
     "gap-2 text-sm font-medium after:absolute after:inset-x-0 after:-bottom-1 after:h-px after:origin-left rtl:after:origin-right after:scale-x-[0.3] after:bg-current after:opacity-60 after:transition-transform after:duration-500 after:ease-out-expo hover:after:scale-x-100",
 };

@@ -63,8 +63,8 @@ export function ClusterPanel({ running }: { running: boolean }) {
       {/* The latency tile overlaps the top-right corner: keep the header clear of it. */}
       <div className="flex items-center gap-3 border-b border-line ps-4 pe-[4.5rem] py-2.5">
         <span aria-hidden className="flex gap-1.5">
-          <span className="size-2 rounded-full bg-white/15" />
-          <span className="size-2 rounded-full bg-white/15" />
+          <span className="size-2 rounded-full bg-tint/15" />
+          <span className="size-2 rounded-full bg-tint/15" />
           <span className="size-2 rounded-full bg-accent/70" />
         </span>
         <span className="font-mono text-[0.6875rem] tracking-[0.12em] whitespace-nowrap text-fg-muted uppercase">prod-cluster</span>
@@ -79,14 +79,14 @@ export function ClusterPanel({ running }: { running: boolean }) {
         {running ? <div aria-hidden className="hero-scan" /> : null}
 
         <svg viewBox="0 0 400 232" className="relative h-auto w-full" aria-hidden>
-          <g fill="none" stroke="rgb(255 255 255 / 0.16)" strokeWidth={1}>
+          <g fill="none" style={{ stroke: "var(--color-line-strong)" }} strokeWidth={1}>
             {edges.map((d) => (
               <path key={d} d={d} />
             ))}
             <path d="M252 206H280" strokeDasharray="3 4" />
           </g>
 
-          <g fill="none" stroke="#9b7bff" strokeOpacity={0.5} strokeWidth={1} strokeLinecap="round">
+          <g fill="none" style={{ stroke: "var(--color-accent)" }} strokeOpacity={0.5} strokeWidth={1} strokeLinecap="round">
             {edges.map((d) => (
               <path key={d} d={d} className="flow-line" />
             ))}
@@ -95,7 +95,7 @@ export function ClusterPanel({ running }: { running: boolean }) {
           {running
             ? packets.map((packet) => (
                 <g key={packet.d}>
-                  <circle r={5} fill="#b49bff" fillOpacity={0.22}>
+                  <circle r={5} style={{ fill: "var(--color-accent)" }} fillOpacity={0.22}>
                     <animateMotion
                       path={packet.d}
                       dur={`${packet.dur}s`}
@@ -104,7 +104,7 @@ export function ClusterPanel({ running }: { running: boolean }) {
                       calcMode="linear"
                     />
                   </circle>
-                  <circle r={2} fill="#e9e2ff">
+                  <circle r={2} style={{ fill: "var(--t-spark)" }}>
                     <animateMotion
                       path={packet.d}
                       dur={`${packet.dur}s`}
@@ -125,8 +125,11 @@ export function ClusterPanel({ running }: { running: boolean }) {
                 width={node.w}
                 height={node.h}
                 rx={5}
-                fill={node.app ? "rgb(155 123 255 / 0.1)" : "rgb(11 11 16 / 0.92)"}
-                stroke={node.app ? "rgb(155 123 255 / 0.6)" : "rgb(255 255 255 / 0.16)"}
+                style={{
+                  fill: node.app ? "var(--color-accent-soft)" : "var(--color-ink-900)",
+                  stroke: node.app ? "var(--color-accent)" : "var(--color-line-strong)",
+                  strokeOpacity: node.app ? 0.6 : 1,
+                }}
               />
               <text x={node.x + 11} y={node.y + 14} className="fill-fg font-mono" fontSize={8.5} letterSpacing={1}>
                 {node.label}
@@ -138,22 +141,20 @@ export function ClusterPanel({ running }: { running: boolean }) {
                 cx={node.x + node.w - 11}
                 cy={node.y + 11}
                 r={2.2}
-                fill="#4ade80"
                 className="hero-led"
-                style={{ animationDelay: `${-index * 0.37}s` }}
+                style={{ fill: "var(--color-signal)", animationDelay: `${-index * 0.37}s` }}
               />
               {node.app ? (
                 <g>
-                  <rect x={node.x + 11} y={node.y + 33} width={node.w - 22} height={3} rx={1.5} fill="rgb(255 255 255 / 0.08)" />
+                  <rect x={node.x + 11} y={node.y + 33} width={node.w - 22} height={3} rx={1.5} style={{ fill: "var(--color-line)" }} />
                   <rect
                     x={node.x + 11}
                     y={node.y + 33}
                     width={node.w - 22}
                     height={3}
                     rx={1.5}
-                    fill="#9b7bff"
                     className="hero-cpu"
-                    style={{ animationDuration: `${node.cycle}s`, animationDelay: `${-index * 1.3}s` }}
+                    style={{ fill: "var(--color-accent)", animationDuration: `${node.cycle}s`, animationDelay: `${-index * 1.3}s` }}
                   />
                 </g>
               ) : null}

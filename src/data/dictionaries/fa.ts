@@ -21,6 +21,11 @@ export const fa: Dictionary = {
     label: "زبان",
     switchTo: "تغییر زبان به {language}",
   },
+  theme: {
+    switchTo: "تغییر به تم {theme}",
+    light: "روشن",
+    dark: "تیره",
+  },
   hero: {
     scrollCue: "اسکرول",
     yearsSuffix: "سال",
@@ -32,6 +37,7 @@ export const fa: Dictionary = {
     philosophyLabel: "رویکرد مهندسی",
     strengthsLabel: "مهارت‌های کلیدی",
     strengthsIntro: "جاهایی که بیشترین ارزش را به تیم و کدبیس اضافه می‌کنم.",
+    coreStrength: "تخصص اصلی",
     stats: {
       years: "سال برنامه‌نویسی حرفه‌ای",
       projects: "پروژه در این نمونه‌کار",

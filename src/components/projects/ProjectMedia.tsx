@@ -56,7 +56,7 @@ export async function PreviewNotice({ placement = "bottom" }: { placement?: "top
   return (
     <span
       className={cn(
-        "label-mono absolute z-10 rounded-full border border-white/10 bg-ink-950/75 px-2.5 py-1 text-[0.625rem] text-fg-muted backdrop-blur-md",
+        "label-mono absolute z-10 rounded-full border border-tint/10 bg-ink-950/75 px-2.5 py-1 text-[0.625rem] text-fg-muted backdrop-blur-md",
         placement === "top" ? "start-4 top-4" : "start-3 bottom-3",
       )}
     >

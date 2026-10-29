@@ -81,14 +81,14 @@ export function LatencyCard({ running }: { running: boolean }) {
       <svg viewBox={`0 0 ${width} ${height}`} className="mt-2.5 h-auto w-full overflow-visible" aria-hidden>
         <defs>
           <linearGradient id="hero-spark-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#9b7bff" stopOpacity={0.35} />
-            <stop offset="100%" stopColor="#9b7bff" stopOpacity={0} />
+            <stop offset="0%" style={{ stopColor: "var(--color-accent)" }} stopOpacity={0.35} />
+            <stop offset="100%" style={{ stopColor: "var(--color-accent)" }} stopOpacity={0} />
           </linearGradient>
         </defs>
         <path d={`${line}L${width} ${height}L0 ${height}Z`} fill="url(#hero-spark-fill)" />
-        <path d={line} fill="none" stroke="#b49bff" strokeWidth={1.25} strokeLinejoin="round" strokeLinecap="round" />
-        <circle cx={width} cy={lastY} r={2.4} fill="#e9e2ff" />
-        <circle cx={width} cy={lastY} r={5} fill="#9b7bff" fillOpacity={0.3} className="hero-led" />
+        <path d={line} fill="none" style={{ stroke: "var(--color-accent)" }} strokeWidth={1.25} strokeLinejoin="round" strokeLinecap="round" />
+        <circle cx={width} cy={lastY} r={2.4} style={{ fill: "var(--t-spark)" }} />
+        <circle cx={width} cy={lastY} r={5} style={{ fill: "var(--color-accent)" }} fillOpacity={0.3} className="hero-led" />
       </svg>
     </div>
   );

@@ -36,7 +36,7 @@ export function CopyEmailButton({ email, labels, className }: CopyEmailButtonPro
       onClick={handleCopy}
       aria-label={copied ? labels.copied : labels.copy}
       className={cn(
-        "group inline-flex h-12 items-center gap-2.5 rounded-full border border-line-strong bg-white/[0.03] px-5 text-[0.9375rem] font-medium backdrop-blur-sm transition-[border-color,background-color] duration-300 hover:border-accent/60 hover:bg-accent-soft",
+        "group inline-flex h-12 items-center gap-2.5 rounded-full border border-line-strong bg-tint/[0.03] px-5 text-[0.9375rem] font-medium backdrop-blur-sm transition-[border-color,background-color] duration-300 hover:border-accent/60 hover:bg-accent-soft",
         className,
       )}
     >

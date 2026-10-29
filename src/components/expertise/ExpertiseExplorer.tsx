@@ -94,7 +94,7 @@ export function ExpertiseExplorer({ groups, copy }: { groups: readonly SkillGrou
                   onPointerEnter={finePointer ? () => setActive(index) : undefined}
                   className="group relative flex w-full items-center gap-5 border-b border-line py-5 pe-2 ps-5 text-start outline-none transition-colors duration-500 xl:gap-6 xl:py-6"
                 >
-                  <span aria-hidden className="absolute inset-0 -z-10 bg-white/[0.025] opacity-0 transition-opacity duration-500 group-aria-selected:opacity-100" />
+                  <span aria-hidden className="absolute inset-0 -z-10 bg-tint/[0.025] opacity-0 transition-opacity duration-500 group-aria-selected:opacity-100" />
                   <span aria-hidden className="absolute inset-y-0 start-0 w-px origin-top scale-y-0 bg-accent transition-transform duration-700 ease-out-expo group-aria-selected:scale-y-100" />
                   {selected && autoplay ? (
                     <span key={active} aria-hidden className="expertise-progress absolute inset-x-0 bottom-0 h-px origin-left bg-gradient-to-r from-accent to-indigo rtl:origin-right rtl:bg-gradient-to-l" />
@@ -147,7 +147,7 @@ export function ExpertiseExplorer({ groups, copy }: { groups: readonly SkillGrou
             <p className="mt-1 text-sm text-fg-subtle">{item.annotation}</p>
             <ul className="mt-5 flex flex-wrap gap-2">
               {item.items.map((skill) => (
-                <li key={skill} className="rounded-full border border-line-strong bg-white/[0.03] px-3 py-1.5 text-[0.8125rem] text-fg">
+                <li key={skill} className="rounded-full border border-line-strong bg-tint/[0.03] px-3 py-1.5 text-[0.8125rem] text-fg">
                   {skill}
                 </li>
               ))}

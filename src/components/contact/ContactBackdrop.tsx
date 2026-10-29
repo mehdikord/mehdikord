@@ -37,7 +37,7 @@ export function ContactBackdrop() {
       <div
         className="absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000,transparent_75%)]"
         style={{
-          backgroundImage: "radial-gradient(circle, rgb(190 170 255 / 0.35) 1px, transparent 1.4px)",
+          backgroundImage: "radial-gradient(circle, rgb(var(--t-dot) / 0.35) 1px, transparent 1.4px)",
           backgroundSize: "22px 22px",
         }}
       />
@@ -55,7 +55,7 @@ export function ContactBackdrop() {
             <path
               d={wavePath(line.amplitude, line.period, line.phase)}
               fill="none"
-              stroke="#8257ff"
+              style={{ stroke: "var(--color-accent-strong)" }}
               strokeOpacity={line.opacity}
               strokeWidth={line.width}
               vectorEffect="non-scaling-stroke"

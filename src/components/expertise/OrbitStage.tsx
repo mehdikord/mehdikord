@@ -81,9 +81,9 @@ export function OrbitStage({ group, code, position, moduleLabel, capabilitiesLab
 
         {/* Orbits */}
         <svg aria-hidden viewBox="0 0 100 100" className="absolute inset-0 size-full">
-          <circle cx={50} cy={50} r={28} fill="none" stroke="rgb(255 255 255 / 0.1)" strokeWidth={0.25} strokeDasharray="0.6 1.2" />
-          <circle cx={50} cy={50} r={39} fill="none" stroke="rgb(255 255 255 / 0.12)" strokeWidth={0.25} strokeDasharray="0.6 1.2" />
-          <circle cx={50} cy={50} r={46} fill="none" stroke="rgb(155 123 255 / 0.2)" strokeWidth={0.2} />
+          <circle cx={50} cy={50} r={28} fill="none" style={{ stroke: "var(--color-line)" }} strokeWidth={0.25} strokeDasharray="0.6 1.2" />
+          <circle cx={50} cy={50} r={39} fill="none" style={{ stroke: "var(--color-line-strong)" }} strokeWidth={0.25} strokeDasharray="0.6 1.2" />
+          <circle cx={50} cy={50} r={46} fill="none" style={{ stroke: "var(--color-accent)" }} strokeOpacity={0.25} strokeWidth={0.2} />
         </svg>
 
         <AnimatePresence mode="wait" initial={false}>
@@ -105,7 +105,8 @@ export function OrbitStage({ group, code, position, moduleLabel, capabilitiesLab
                     y1={50}
                     x2={satellite.x}
                     y2={satellite.y}
-                    stroke="rgb(155 123 255 / 0.35)"
+                    style={{ stroke: "var(--color-accent)" }}
+                    strokeOpacity={0.4}
                     strokeWidth={0.2}
                     className="flow-line"
                   />

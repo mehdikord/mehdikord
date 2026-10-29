@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif, Vazirmatn } from "next/font/google";
+import Script from "next/script";
 
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
@@ -13,6 +14,8 @@ import { getLocale } from "@/i18n/server";
 import { getProfile } from "@/lib/profile";
 import { getAllProjects } from "@/lib/projects";
 import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/theme/ThemeProvider";
+import { themeInitScript } from "@/theme/theme";
 
 import "../globals.css";
 
@@ -61,8 +64,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#050507",
-  colorScheme: "dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f5fa" },
+    { media: "(prefers-color-scheme: dark)", color: "#050507" },
+  ],
+  colorScheme: "dark light",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
@@ -75,6 +81,8 @@ export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
       lang={locale}
       dir={localeMeta[locale].dir}
       data-scroll-behavior="smooth"
+      // The theme attribute is set by the inline script before hydration.
+      suppressHydrationWarning
       className={cn(
         geistSans.variable,
         geistMono.variable,
@@ -84,6 +92,10 @@ export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
       )}
     >
       <head>
+        {/* Applies the saved or system theme before first paint (injected server-side, never re-run by React). */}
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
         {/* Without JavaScript, entrance animations never run — show content as-is. */}
         <noscript>
           <style>{`[data-reveal]{opacity:1!important;transform:none!important}`}</style>
@@ -98,9 +110,10 @@ export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
           {dictionary.nav.skipToContent}
         </a>
         <LocaleProvider locale={locale}>
+          <ThemeProvider>
           <MotionProvider>
             <Navbar
-              copy={{ nav: dictionary.nav, language: dictionary.language }}
+              copy={{ nav: dictionary.nav, language: dictionary.language, theme: dictionary.theme }}
               brand={{ name: profile.name, initials: profile.initials }}
               availability={profile.availability}
               projectCount={projects.length}
@@ -109,6 +122,7 @@ export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
               {children}
             </main>
           </MotionProvider>
+          </ThemeProvider>
         </LocaleProvider>
         <Footer />
       </body>

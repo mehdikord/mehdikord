@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { MouseEvent } from "react";
 
 import { LOCALE_COOKIE, localeMeta, locales, type Locale } from "@/i18n/config";
@@ -26,7 +26,6 @@ interface LanguageSwitcherProps {
  */
 export function LanguageSwitcher({ copy, className, onSwitch }: LanguageSwitcherProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const current = useLocale();
 
   function handleClick(event: MouseEvent<HTMLAnchorElement>, target: Locale) {
@@ -34,9 +33,10 @@ export function LanguageSwitcher({ copy, className, onSwitch }: LanguageSwitcher
     rememberLocale(target);
     onSwitch?.();
     if (target === current) return;
-    // Each language has its own root layout, so this is a full document load.
-    const { search, hash } = window.location;
-    router.push(`${switchLocalePath(pathname, target)}${search}${hash}`);
+    // Each language has its own root layout (fonts, direction, theme script):
+    // load the document fresh instead of re-rendering <html> on the client.
+    const { search, hash, origin } = window.location;
+    window.location.assign(new URL(`${switchLocalePath(pathname, target)}${search}${hash}`, origin).href);
   }
 
   return (

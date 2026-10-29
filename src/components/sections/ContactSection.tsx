@@ -39,7 +39,7 @@ function ChannelCard({ channel, notConfigured, newTab }: { channel: ContactChann
             "inline-flex size-11 items-center justify-center rounded-full ring-1 transition-[background-color,color,rotate] duration-500 ease-out-expo",
             configured
               ? "bg-accent-soft text-accent ring-accent/25 group-hover:-rotate-8 group-hover:bg-accent group-hover:text-ink-950"
-              : "bg-white/[0.03] text-fg-subtle ring-line",
+              : "bg-tint/[0.03] text-fg-subtle ring-line",
           )}
         >
           <Icon className="size-5" strokeWidth={1.6} />
@@ -191,7 +191,7 @@ export async function ContactSection() {
             />
             {copy.steps.map((step, index) => (
               <RevealItem as="li" key={step.title} className="relative flex flex-col items-center text-center">
-                <span className="relative inline-flex size-10 items-center justify-center rounded-full border border-accent/40 bg-ink-950 font-mono text-xs text-accent shadow-[0_0_0_6px_rgb(5_5_7)]">
+                <span className="relative inline-flex size-10 items-center justify-center rounded-full border border-accent/40 bg-ink-950 font-mono text-xs text-accent shadow-[0_0_0_6px_var(--color-ink-950)]">
                   {pad(locale, index + 1)}
                 </span>
                 <h4 className="mt-5 text-lg font-medium tracking-tight">{step.title}</h4>

@@ -9,6 +9,7 @@ import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { MobileMenu } from "@/components/layout/MobileMenu";
 import { sectionHref } from "@/components/layout/nav-links";
 import { ScrollProgress } from "@/components/layout/ScrollProgress";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { ease } from "@/components/motion/motion-variants";
 import { Wordmark } from "@/components/ui/Wordmark";
 import type { Dictionary } from "@/data/dictionaries";
@@ -23,7 +24,7 @@ import type { Profile } from "@/types/portfolio";
 const MENU_ID = "mobile-navigation";
 
 export interface NavbarProps {
-  copy: Pick<Dictionary, "nav" | "language">;
+  copy: Pick<Dictionary, "nav" | "language" | "theme">;
   brand: { name: string; initials: string };
   availability: Profile["availability"];
   projectCount: number;
@@ -140,6 +141,7 @@ export function Navbar({ copy, brand, availability, projectCount }: NavbarProps)
               <span className="font-mono text-[0.6875rem] text-fg-subtle">{pad(locale, projectCount)}</span>
             </Link>
 
+            <ThemeToggle copy={copy.theme} />
             <LanguageSwitcher copy={copy.language} />
 
             <button

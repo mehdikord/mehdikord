@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { useHeroMotion } from "@/components/hero/hero-motion";
+import { THEME_EVENT } from "@/theme/theme";
 
 /*
  * A field of drifting data points covering the hero. Points near the pointer
@@ -41,12 +42,22 @@ export function HeroField({ className }: { className?: string }) {
     let width = 0;
     let height = 0;
     let cols = 0;
+    // "r g b" triplets from the theme, read on build and whenever the theme changes.
+    let dot = "190, 170, 255";
+    let link = "155, 123, 255";
+
+    const readColors = () => {
+      const styles = getComputedStyle(canvas);
+      dot = styles.getPropertyValue("--t-dot").trim().split(/\s+/).join(", ") || dot;
+      link = styles.getPropertyValue("--t-link").trim().split(/\s+/).join(", ") || link;
+    };
     let points: Point[] = [];
     let frame = 0;
     let inView = true;
     const started = performance.now();
 
     const build = () => {
+      readColors();
       const rect = host.getBoundingClientRect();
       width = rect.width;
       height = rect.height;
@@ -90,7 +101,7 @@ export function HeroField({ className }: { className?: string }) {
         point.y = y;
         point.near = near;
 
-        context.fillStyle = `rgba(190,170,255,${alpha.toFixed(3)})`;
+        context.fillStyle = `rgba(${dot},${alpha.toFixed(3)})`;
         context.beginPath();
         context.arc(x, y, 1 + near * 1.3, 0, TAU);
         context.fill();
@@ -104,7 +115,7 @@ export function HeroField({ className }: { className?: string }) {
         if (!point || point.near <= 0.02) continue;
 
         // Link to the focus.
-        context.strokeStyle = `rgba(155,123,255,${(point.near * point.near * 0.55).toFixed(3)})`;
+        context.strokeStyle = `rgba(${link},${(point.near * point.near * 0.55).toFixed(3)})`;
         context.beginPath();
         context.moveTo(point.x, point.y);
         context.lineTo(fx, fy);
@@ -116,7 +127,7 @@ export function HeroField({ className }: { className?: string }) {
         for (const neighbour of [right, below]) {
           if (!neighbour || neighbour.near <= 0.02) continue;
           const strength = Math.min(point.near, neighbour.near) * 0.4;
-          context.strokeStyle = `rgba(190,170,255,${strength.toFixed(3)})`;
+          context.strokeStyle = `rgba(${dot},${strength.toFixed(3)})`;
           context.beginPath();
           context.moveTo(point.x, point.y);
           context.lineTo(neighbour.x, neighbour.y);
@@ -158,6 +169,11 @@ export function HeroField({ className }: { className?: string }) {
 
     const handleVisibility = () => (document.visibilityState === "visible" ? resume() : suspend());
     document.addEventListener("visibilitychange", handleVisibility);
+    const handleTheme = () => {
+      readColors();
+      draw(performance.now());
+    };
+    window.addEventListener(THEME_EVENT, handleTheme);
 
     build();
     resume();
@@ -167,6 +183,7 @@ export function HeroField({ className }: { className?: string }) {
       observer.disconnect();
       resizer.disconnect();
       document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener(THEME_EVENT, handleTheme);
     };
   }, [pointer, interactive, reduceMotion]);
 

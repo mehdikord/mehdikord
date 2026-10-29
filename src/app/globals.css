@@ -7,31 +7,39 @@
    `prop-(--token)` syntax or plain CSS.
    ────────────────────────────────────────────────────────────────────────── */
 
-@theme {
+/*
+   Colour tokens are declared `inline` and point at `--t-*` variables, which
+   `:root` sets for the dark theme and `html[data-theme="light"]` overrides.
+   Every utility (including opacity modifiers) therefore follows the theme.
+*/
+@theme inline {
   --breakpoint-xs: 26rem;
 
   /* Surfaces */
-  --color-ink-950: #050507;
-  --color-ink-900: #09090d;
-  --color-ink-850: #0d0d13;
-  --color-ink-800: #13131b;
-  --color-ink-700: #1c1c26;
+  --color-ink-950: var(--t-ink-950);
+  --color-ink-900: var(--t-ink-900);
+  --color-ink-850: var(--t-ink-850);
+  --color-ink-800: var(--t-ink-800);
+  --color-ink-700: var(--t-ink-700);
 
   /* Text */
-  --color-fg: #f4f4f6;
-  --color-fg-muted: #a3a3ae;
-  --color-fg-subtle: #7d7d88;
+  --color-fg: var(--t-fg);
+  --color-fg-muted: var(--t-fg-muted);
+  --color-fg-subtle: var(--t-fg-subtle);
 
   /* Lines */
-  --color-line: rgb(255 255 255 / 0.08);
-  --color-line-strong: rgb(255 255 255 / 0.16);
+  --color-line: var(--t-line);
+  --color-line-strong: var(--t-line-strong);
+
+  /* Overlay tint: white on dark surfaces, black on light ones (use with /opacity). */
+  --color-tint: var(--t-tint);
 
   /* Accent — ultraviolet with restrained indigo */
-  --color-accent: #9b7bff;
-  --color-accent-strong: #8257ff;
-  --color-accent-soft: rgb(155 123 255 / 0.14);
-  --color-indigo: #6d6bff;
-  --color-signal: #4ade80;
+  --color-accent: var(--t-accent);
+  --color-accent-strong: var(--t-accent-strong);
+  --color-accent-soft: var(--t-accent-soft);
+  --color-indigo: var(--t-indigo);
+  --color-signal: var(--t-signal);
 
   /* Light surface used sparingly for contrast */
   --color-paper: #ecebf2;
@@ -44,14 +52,78 @@
   --radius-md: 0.875rem;
   --radius-lg: 1.25rem;
 
-  --shadow-frame: 0 1px 0 0 rgb(255 255 255 / 0.06) inset,
-    0 40px 80px -40px rgb(0 0 0 / 0.9), 0 0 0 1px rgb(255 255 255 / 0.06);
-  --shadow-glow: 0 0 0 1px rgb(155 123 255 / 0.35),
-    0 12px 40px -12px rgb(130 87 255 / 0.55);
+  --shadow-frame: var(--t-shadow-frame);
+  --shadow-glow: var(--t-shadow-glow);
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+/* Dark theme (default) */
+:root {
+  --t-ink-950: #050507;
+  --t-ink-900: #09090d;
+  --t-ink-850: #0d0d13;
+  --t-ink-800: #13131b;
+  --t-ink-700: #1c1c26;
+  --t-fg: #f4f4f6;
+  --t-fg-muted: #a3a3ae;
+  --t-fg-subtle: #7d7d88;
+  --t-line: rgb(255 255 255 / 0.08);
+  --t-line-strong: rgb(255 255 255 / 0.16);
+  --t-tint: #ffffff;
+  --t-accent: #9b7bff;
+  --t-accent-strong: #8257ff;
+  --t-accent-soft: rgb(155 123 255 / 0.14);
+  --t-indigo: #6d6bff;
+  --t-signal: #4ade80;
+  --t-shadow-frame: 0 1px 0 0 rgb(255 255 255 / 0.06) inset, 0 40px 80px -40px rgb(0 0 0 / 0.9),
+    0 0 0 1px rgb(255 255 255 / 0.06);
+  --t-shadow-glow: 0 0 0 1px rgb(155 123 255 / 0.35), 0 12px 40px -12px rgb(130 87 255 / 0.55);
+  /* Decorative values with no utility: gradients, canvas, SVG, glass. */
+  --t-serif-start: #e9e2ff;
+  --t-spark: #e9e2ff;
+  --t-dot: 190 170 255;
+  --t-link: 155 123 255;
+  --t-glow-ring: rgb(185 160 255 / 0.9);
+  --t-glass-a: rgb(19 19 27 / 0.9);
+  --t-glass-b: rgb(9 9 13 / 0.94);
+  --t-glass-edge: rgb(255 255 255 / 0.28);
+  --t-selection-fg: #ffffff;
+}
+
+/* Light theme */
+html[data-theme="light"] {
+  color-scheme: light;
+  --t-ink-950: #f6f5fa;
+  --t-ink-900: #ffffff;
+  --t-ink-850: #fbfafd;
+  --t-ink-800: #eeedf4;
+  --t-ink-700: #e2e0ea;
+  --t-fg: #15131f;
+  --t-fg-muted: #4b4959;
+  --t-fg-subtle: #6b6979;
+  --t-line: rgb(12 11 18 / 0.1);
+  --t-line-strong: rgb(12 11 18 / 0.2);
+  --t-tint: #0c0b12;
+  --t-accent: #6a48ec;
+  --t-accent-strong: #5a37df;
+  --t-accent-soft: rgb(106 72 236 / 0.1);
+  --t-indigo: #4f4de0;
+  --t-signal: #15803d;
+  --t-shadow-frame: 0 1px 0 0 rgb(255 255 255 / 0.7) inset, 0 30px 60px -30px rgb(30 20 80 / 0.25),
+    0 0 0 1px rgb(12 11 18 / 0.06);
+  --t-shadow-glow: 0 0 0 1px rgb(106 72 236 / 0.35), 0 12px 40px -12px rgb(106 72 236 / 0.4);
+  --t-serif-start: #2c1d7f;
+  --t-spark: #2c1d7f;
+  --t-dot: 106 72 236;
+  --t-link: 90 55 223;
+  --t-glow-ring: rgb(106 72 236 / 0.7);
+  --t-glass-a: rgb(255 255 255 / 0.86);
+  --t-glass-b: rgb(248 247 252 / 0.92);
+  --t-glass-edge: rgb(255 255 255 / 0.95);
+  --t-selection-fg: #15131f;
 }
 
 @theme inline {
@@ -112,8 +184,8 @@
   }
 
   ::selection {
-    background: rgb(155 123 255 / 0.4);
-    color: #fff;
+    background: color-mix(in oklab, var(--color-accent) 40%, transparent);
+    color: var(--t-selection-fg);
   }
 
   [id] {
@@ -199,7 +271,7 @@
   font-style: italic;
   font-weight: 400;
   letter-spacing: -0.02em;
-  background: linear-gradient(100deg, #e9e2ff 0%, var(--color-accent) 55%, var(--color-indigo) 100%);
+  background: linear-gradient(100deg, var(--t-serif-start) 0%, var(--color-accent) 55%, var(--color-indigo) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -392,7 +464,7 @@
   position: relative;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-line);
-  background: linear-gradient(180deg, rgb(19 19 27 / 0.9), rgb(9 9 13 / 0.94));
+  background: linear-gradient(180deg, var(--t-glass-a), var(--t-glass-b));
   box-shadow: var(--shadow-frame);
   backdrop-filter: blur(14px);
 }
@@ -403,7 +475,7 @@
   inset: 0 0 auto;
   height: 1px;
   border-radius: inherit;
-  background: linear-gradient(90deg, transparent 8%, rgb(255 255 255 / 0.28), transparent 92%);
+  background: linear-gradient(90deg, transparent 8%, var(--t-glass-edge), transparent 92%);
   pointer-events: none;
 }
 
@@ -556,6 +628,47 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
+   Strength board — one light shared across the tiles
+   `--spot-x/--spot-y` are the pointer in tile coordinates and `--spot-a`
+   the tile's share of the light, written by StrengthBoard.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@layer components {
+  .strength-tile {
+    --spot-x: 50%;
+    --spot-y: 50%;
+    --spot-a: 0;
+    isolation: isolate;
+  }
+
+  .strength-tile::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(22rem circle at var(--spot-x) var(--spot-y), rgb(130 87 255 / 0.2), transparent 60%);
+    opacity: var(--spot-a);
+    transition: opacity 240ms linear;
+  }
+
+  .strength-tile::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: radial-gradient(16rem circle at var(--spot-x) var(--spot-y), var(--t-glow-ring), transparent 65%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: var(--spot-a);
+    pointer-events: none;
+    transition: opacity 240ms linear;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
    Persian (right-to-left)
    Persian script is connected: letter-spacing breaks the joins and uppercase
    doesn't exist, so both are neutralised. Glyph dots and descenders need more
@@ -644,7 +757,7 @@ html[lang="fa"] .display-name {
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: radial-gradient(14rem circle at var(--spot-x) var(--spot-y), rgb(185 160 255 / 0.85), transparent 65%);
+    background: radial-gradient(14rem circle at var(--spot-x) var(--spot-y), var(--t-glow-ring), transparent 65%);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -678,4 +791,72 @@ html[lang="fa"] body.admin-panel {
 
 body.admin-panel::after {
   display: none;
+}
+
+html[data-theme="light"] body::after {
+  filter: invert(1);
+  opacity: 0.05;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Theme switch — circular reveal from the toggle (View Transitions API).
+   `--vt-x` / `--vt-y` are set by ThemeToggle before the transition starts.
+   ────────────────────────────────────────────────────────────────────────── */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+  clip-path: circle(0 at var(--vt-x, 50%) var(--vt-y, 50%));
+  animation: theme-reveal 720ms var(--ease-out-quart) forwards;
+}
+
+@keyframes theme-reveal {
+  to {
+    clip-path: circle(150vmax at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+}
+
+/* Sun / moon toggle */
+.theme-toggle__ray {
+  transform-origin: 12px 12px;
+  transition: opacity 300ms var(--ease-out-quart), transform 500ms var(--ease-out-expo);
+}
+
+html[data-theme="light"] .theme-toggle__ray {
+  opacity: 1;
+  transform: scale(1);
+}
+
+html:not([data-theme="light"]) .theme-toggle__ray {
+  opacity: 0;
+  transform: scale(0.4) rotate(-45deg);
+}
+
+.theme-toggle__mask {
+  transition: transform 500ms var(--ease-out-expo);
+}
+
+html[data-theme="light"] .theme-toggle__mask {
+  transform: translate(10px, -10px);
+}
+
+.theme-toggle__core {
+  transition: r 500ms var(--ease-out-expo);
+}
+
+html[data-theme="light"] .theme-toggle__core {
+  r: 4;
+}
+
+html:not([data-theme="light"]) .theme-toggle__core {
+  r: 7;
 }

@@ -28,6 +28,11 @@ export const en = {
     label: "Language",
     switchTo: "Switch to {language}",
   },
+  theme: {
+    switchTo: "Switch to {theme} theme",
+    light: "light",
+    dark: "dark",
+  },
   hero: {
     scrollCue: "Scroll",
     yearsSuffix: "years",
@@ -39,6 +44,7 @@ export const en = {
     philosophyLabel: "Engineering philosophy",
     strengthsLabel: "Key strengths",
     strengthsIntro: "Where I add the most value to a team and a codebase.",
+    coreStrength: "Core specialism",
     stats: {
       years: "Years of professional programming",
       projects: "Projects in this portfolio",
