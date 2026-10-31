@@ -16,16 +16,18 @@ interface MaskedHeadingProps {
   /** Seconds between lines. */
   interval?: number;
   delay?: number;
+  /** Keep the lines on one row (each still reveals through its own mask). */
+  inline?: boolean;
 }
 
 /** Section headline whose lines rise through clipping masks on first view. */
-export function MaskedHeading({ lines, as = "h2", id, className, interval = 0.09, delay = 0 }: MaskedHeadingProps) {
+export function MaskedHeading({ lines, as = "h2", id, className, interval = 0.09, delay = 0, inline = false }: MaskedHeadingProps) {
   const Tag = tags[as] as typeof m.h2;
   return (
     <Tag id={id} className={className} initial="hidden" whileInView="visible" viewport={viewportOnce}>
       {lines.map((line, index) => (
         // Padding keeps descenders and italic overhangs inside the mask.
-        <span key={line.text} className="mask-line">
+        <span key={line.text} className={cn("mask-line", inline && "inline-block align-bottom [&:not(:last-child)]:me-[0.28em]")}>
           <m.span
             className={cn("block", line.emphasis && "text-accent-serif")}
             data-reveal=""

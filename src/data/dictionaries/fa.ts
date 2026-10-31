@@ -86,6 +86,10 @@ export const fa: Dictionary = {
     present: "اکنون",
     responsibilitiesLabel: "مسئولیت‌ها",
     technologiesLabel: "فناوری‌ها",
+    railLabel: "مسیر",
+    currentBadge: "نقش فعلی",
+    rolesLabel: "{count} نقش",
+    yearsLabel: "{count} سال",
   },
   contact: {
     index: "۰۵",
@@ -93,7 +97,10 @@ export const fa: Dictionary = {
     title: [{ text: "سیستمی دارید" }, { text: "که باید رشد کند؟", emphasis: true }],
     intro:
       "به نقش‌های ارشد و لید بک‌اند، کارهای معماری و محصولات جاه‌طلبانه‌ای که به یک همکار فنی قابل‌اتکا نیاز دارند علاقه‌مندم. بگویید چه چیزی می‌سازید.",
+    callCta: "کافیه با من تماس بگیرید",
     emailCta: "برایم ایمیل بفرستید",
+    copyPhone: "کپی شماره",
+    orEmail: "یا بنویسید به",
     channelsLabel: "راه‌های ارتباطی",
     channels: {
       email: "ایمیل",
@@ -103,7 +110,7 @@ export const fa: Dictionary = {
       instagram: "اینستاگرام",
     },
     opensInNewTab: "در زبانه جدید باز می‌شود",
-    notConfigured: "تنظیم نشده — در src/data/profile.ts وارد کنید",
+    notConfigured: "تنظیم نشده — در پنل مدیریت وارد کنید",
     copyEmail: "کپی آدرس ایمیل",
     copied: "کپی شد",
     stepsLabel: "شروع همکاری",
@@ -126,7 +133,6 @@ export const fa: Dictionary = {
     title: [{ text: "همه" }, { text: "پروژه‌ها.", emphasis: true }],
     intro:
       "فهرست کامل نمونه‌کارها در حوزه‌های فروشگاهی، SaaS، سازمانی و ابزارهای داخلی. بر اساس حوزه فیلتر کنید و هر پروژه را برای مرور کلی یا مطالعه موردی کامل باز کنید.",
-    backHome: "بازگشت به خانه",
     filterLabel: "فیلتر پروژه‌ها بر اساس حوزه",
     all: "همه",
     projectsNoun: "پروژه",

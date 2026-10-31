@@ -189,6 +189,7 @@ export async function getExperienceItems(): Promise<ExperienceItem[]> {
     id: row.id.toString(),
     startMonth: row.startMonth,
     endMonth: row.endMonth ?? "",
+    logoUrl: row.logoUrl,
     technologies: jsonStrings(row.technologies),
     sortOrder: row.sortOrder,
     text: localized(

@@ -130,7 +130,7 @@ export function FeaturedGallery({ items, labels }: FeaturedGalleryProps) {
                       <span aria-hidden>·</span>
                       <span>{item.period}</span>
                     </p>
-                    <h3 className="mt-4 text-[clamp(2.25rem,1.2rem+2.4vw,3.75rem)] leading-[1] font-semibold tracking-[-0.045em]">
+                    <h3 className="mt-4 text-[clamp(2rem,1.1rem+2vw,3.25rem)] leading-[1] font-semibold tracking-[-0.045em]">
                       {/* Stays tabbable while collapsed: focusing it expands the panel. */}
                       <Link
                         href={item.href}

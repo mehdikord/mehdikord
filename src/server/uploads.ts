@@ -21,6 +21,9 @@ export const IMAGE_TYPES: Record<string, string> = {
   "image/gif": "gif",
 };
 
+/** Logos may also be SVG; they are only ever rendered through <img>. */
+export const LOGO_TYPES: Record<string, string> = { ...IMAGE_TYPES, "image/svg+xml": "svg" };
+
 export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 export interface StoredImage {
@@ -30,8 +33,8 @@ export interface StoredImage {
 }
 
 /** Saves an uploaded image under `storage/uploads/<folder>/` and returns its public URL and size. */
-export async function storeImage(file: File, folder: string): Promise<StoredImage> {
-  const extension = IMAGE_TYPES[file.type];
+export async function storeImage(file: File, folder: string, types: Record<string, string> = IMAGE_TYPES): Promise<StoredImage> {
+  const extension = types[file.type];
   if (!extension) throw new Error("Unsupported image type");
 
   const bytes = new Uint8Array(await file.arrayBuffer());

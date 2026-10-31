@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { IMAGE_TYPES, resolveUpload, UPLOADS_URL } from "@/server/uploads";
+import { LOGO_TYPES, resolveUpload, UPLOADS_URL } from "@/server/uploads";
 
-const contentTypes = Object.fromEntries(Object.entries(IMAGE_TYPES).map(([type, extension]) => [`.${extension}`, type]));
+const contentTypes = Object.fromEntries(Object.entries(LOGO_TYPES).map(([type, extension]) => [`.${extension}`, type]));
 
 /** Serves files uploaded from the admin panel (see `src/server/uploads.ts`). */
 export async function GET(_request: Request, { params }: RouteContext<"/uploads/[...path]">) {
@@ -20,6 +20,8 @@ export async function GET(_request: Request, { params }: RouteContext<"/uploads/
         // File names are random and never reused, so they can be cached forever.
         "Cache-Control": "public, max-age=31536000, immutable",
         "X-Content-Type-Options": "nosniff",
+        // SVG logos are static artwork: never let them run scripts if opened directly.
+        ...(type === "image/svg+xml" ? { "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'" } : {}),
       },
     });
   } catch {

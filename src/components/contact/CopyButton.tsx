@@ -5,14 +5,15 @@ import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-interface CopyEmailButtonProps {
-  email: string;
+interface CopyButtonProps {
+  /** Text placed on the clipboard. */
+  value: string;
   labels: { copy: string; copied: string };
   className?: string;
 }
 
-/** Copies the address to the clipboard and confirms for a moment. */
-export function CopyEmailButton({ email, labels, className }: CopyEmailButtonProps) {
+/** Copies a value to the clipboard and confirms for a moment. */
+export function CopyButton({ value, labels, className }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -23,10 +24,10 @@ export function CopyEmailButton({ email, labels, className }: CopyEmailButtonPro
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(email);
+      await navigator.clipboard.writeText(value);
       setCopied(true);
     } catch {
-      // Clipboard unavailable (insecure context or denied): the mailto link still works.
+      // Clipboard unavailable (insecure context or denied): the link next to it still works.
     }
   }
 

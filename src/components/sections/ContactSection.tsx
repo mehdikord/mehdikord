@@ -2,7 +2,7 @@ import { ArrowUpRight, Mail, Phone } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 
 import { ContactBackdrop } from "@/components/contact/ContactBackdrop";
-import { CopyEmailButton } from "@/components/contact/CopyEmailButton";
+import { CopyButton } from "@/components/contact/CopyButton";
 import { SpotlightCard } from "@/components/contact/SpotlightCard";
 import { MaskedHeading } from "@/components/motion/MaskedHeading";
 import { Reveal, RevealGroup, RevealItem } from "@/components/motion/Reveal";
@@ -27,49 +27,89 @@ const icons: Record<ContactChannelId, ComponentType<SVGProps<SVGSVGElement>>> = 
 // Unset channels are flagged during development and omitted in production.
 const showPlaceholders = process.env.NODE_ENV !== "production";
 
+/** Brand colour for each channel's icon tile and hover glow. */
+const brands: Record<ContactChannelId, string> = {
+  email: "linear-gradient(135deg, #8257ff, #6d6bff)",
+  phone: "linear-gradient(135deg, #22c55e, #0ea5a4)",
+  telegram: "linear-gradient(135deg, #2aabee, #1d8fd6)",
+  linkedin: "linear-gradient(135deg, #0a66c2, #2f8ae6)",
+  instagram: "linear-gradient(135deg, #f58529 0%, #dd2a7b 50%, #8134af 100%)",
+};
+
+const glows: Record<ContactChannelId, string> = {
+  email: "#8257ff",
+  phone: "#22c55e",
+  telegram: "#2aabee",
+  linkedin: "#0a66c2",
+  instagram: "#dd2a7b",
+};
+
+/** Phone first (the primary call to action), then the rest in their usual order. */
+const channelOrder: ContactChannelId[] = ["phone", "email", "telegram", "linkedin", "instagram"];
+
 function ChannelCard({ channel, notConfigured, newTab }: { channel: ContactChannel; notConfigured: string; newTab: string }) {
   const Icon = icons[channel.id];
   const configured = channel.href !== null;
 
   const body = (
     <>
-      <span className="flex items-start justify-between gap-4">
+      {/* Brand-coloured glow that rises from the corner on hover. */}
+      {configured ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -top-12 -end-12 size-40 rounded-full opacity-0 blur-3xl transition-opacity duration-700 ease-out-quart group-hover:opacity-50"
+          style={{ background: glows[channel.id] }}
+        />
+      ) : null}
+
+      <span className="relative flex items-start justify-between gap-4">
         <span
           className={cn(
-            "inline-flex size-11 items-center justify-center rounded-full ring-1 transition-[background-color,color,rotate] duration-500 ease-out-expo",
+            "inline-flex size-12 items-center justify-center rounded-[0.9rem] shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] transition-[rotate,scale,box-shadow] duration-500 ease-out-expo",
             configured
-              ? "bg-accent-soft text-accent ring-accent/25 group-hover:-rotate-8 group-hover:bg-accent group-hover:text-ink-950"
-              : "bg-tint/[0.03] text-fg-subtle ring-line",
+              ? "text-white group-hover:-rotate-6 group-hover:scale-105 group-hover:shadow-[inset_0_1px_0_rgb(255_255_255/0.3),0_12px_30px_-10px_var(--glow)]"
+              : "bg-tint/[0.04] text-fg-subtle ring-1 ring-line",
           )}
+          style={configured ? ({ background: brands[channel.id], "--glow": glows[channel.id] } as React.CSSProperties) : undefined}
         >
-          <Icon className="size-5" strokeWidth={1.6} />
+          <Icon className="size-[1.35rem]" strokeWidth={1.75} />
         </span>
         {configured ? (
-          <ArrowUpRight
-            aria-hidden
-            className="size-4 text-fg-subtle transition-[translate,color] duration-500 ease-out-expo group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-fg rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5"
-            strokeWidth={1.75}
-          />
+          <span className="inline-flex size-8 items-center justify-center rounded-full border border-line text-fg-subtle transition-[border-color,color,background-color] duration-500 ease-out-expo group-hover:border-transparent group-hover:bg-fg group-hover:text-ink-950">
+            <ArrowUpRight
+              aria-hidden
+              className="size-4 transition-transform duration-500 ease-out-expo group-hover:-translate-y-0.5 group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5"
+              strokeWidth={1.75}
+            />
+          </span>
         ) : null}
       </span>
-      <span className="mt-8 block">
+
+      <span className="relative mt-8 block">
         <span className="label-mono block text-fg-subtle">{channel.label}</span>
         {configured ? (
-          <span dir="ltr" className="mt-1.5 block truncate text-start font-medium text-fg rtl:text-end">
+          <span dir="ltr" className="mt-1.5 block truncate text-start text-[0.9375rem] font-medium text-fg rtl:text-end">
             {channel.display}
           </span>
         ) : (
           <span className="mt-1.5 block text-xs text-pretty text-fg-subtle italic">{notConfigured}</span>
         )}
       </span>
+
+      {/* Hairline that lights up in the brand colour. */}
+      {configured ? (
+        <span
+          aria-hidden
+          className="absolute inset-x-5 bottom-0 h-px origin-left scale-x-0 transition-transform duration-700 ease-out-expo group-hover:scale-x-100 rtl:origin-right"
+          style={{ background: brands[channel.id] }}
+        />
+      ) : null}
     </>
   );
 
   const cardClass = cn(
-    "group relative block h-full rounded-lg border p-5 transition-[translate,border-color,background-color] duration-500 ease-out-expo",
-    configured
-      ? "border-line bg-ink-900/60 backdrop-blur-sm hover:-translate-y-1 hover:border-transparent"
-      : "border-dashed border-line-strong bg-ink-900/30",
+    "group relative block h-full overflow-hidden rounded-lg p-5 transition-[translate,border-color,box-shadow] duration-500 ease-out-expo",
+    configured ? "glass-card hover:-translate-y-1 hover:border-line-strong" : "rounded-lg border border-dashed border-line-strong bg-ink-900/30",
   );
 
   return (
@@ -97,7 +137,10 @@ export async function ContactSection() {
   const profile = await getProfile(locale);
   const channels = getContactChannels(profile.contact, copy.channels);
   const email = channels.find((channel) => channel.id === "email");
-  const visibleChannels = channels.filter((channel) => channel.href || showPlaceholders);
+  const phone = channels.find((channel) => channel.id === "phone");
+  const visibleChannels = channelOrder
+    .map((id) => channels.find((channel) => channel.id === id))
+    .filter((channel): channel is ContactChannel => channel !== undefined && (channel.href !== null || showPlaceholders));
 
   return (
     <section id="contact" aria-labelledby="contact-title" className="relative isolate overflow-hidden pt-(--section-y) pb-44 md:pb-56">
@@ -121,21 +164,52 @@ export async function ContactSection() {
           <MaskedHeading
             id="contact-title"
             lines={copy.title}
-            className="mt-8 text-[clamp(2.75rem,1.4rem+6vw,7.5rem)] leading-[0.95] font-semibold tracking-[-0.05em] text-balance"
+            className="mt-8 text-[clamp(2.5rem,1.3rem+5vw,6.25rem)] leading-[0.95] font-semibold tracking-[-0.05em] text-balance"
           />
 
           <Reveal delay={0.15}>
             <p className="text-lead mx-auto mt-8 max-w-2xl text-pretty text-fg-muted">{copy.intro}</p>
           </Reveal>
 
-          <Reveal delay={0.25} className="mt-10 flex flex-col items-center gap-4">
-            {email?.href ? (
+          <Reveal delay={0.25} className="mt-10 flex flex-col items-center gap-5">
+            {phone?.href ? (
+              <>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <ButtonLink href={phone.href} icon="up-right">
+                    {copy.callCta}
+                  </ButtonLink>
+                  <CopyButton value={phone.display} labels={{ copy: copy.copyPhone, copied: copy.copied }} />
+                </div>
+                <a
+                  href={phone.href}
+                  dir="ltr"
+                  className="group inline-flex items-center gap-3 rounded-full border border-line bg-ink-950/40 py-2 ps-2.5 pe-5 backdrop-blur-md transition-[border-color,background-color] duration-300 hover:border-accent/50 hover:bg-accent-soft"
+                >
+                  <span className="inline-flex size-8 items-center justify-center rounded-full bg-signal/15 text-signal">
+                    <Phone className="size-4" strokeWidth={1.75} />
+                  </span>
+                  <span className="font-mono text-[1.0625rem] font-medium tracking-wide text-fg tabular-nums">{phone.display}</span>
+                </a>
+                {email?.href ? (
+                  <p className="label-mono text-fg-subtle">
+                    {copy.orEmail}{" "}
+                    <a
+                      href={email.href}
+                      dir="ltr"
+                      className="font-mono normal-case tracking-normal text-fg-muted underline decoration-line-strong underline-offset-4 transition-colors hover:text-fg hover:decoration-accent"
+                    >
+                      {email.display}
+                    </a>
+                  </p>
+                ) : null}
+              </>
+            ) : email?.href ? (
               <>
                 <div className="flex flex-wrap items-center justify-center gap-3">
                   <ButtonLink href={email.href} icon="up-right">
                     {copy.emailCta}
                   </ButtonLink>
-                  <CopyEmailButton email={email.display} labels={{ copy: copy.copyEmail, copied: copy.copied }} />
+                  <CopyButton value={email.display} labels={{ copy: copy.copyEmail, copied: copy.copied }} />
                 </div>
                 <a
                   href={email.href}

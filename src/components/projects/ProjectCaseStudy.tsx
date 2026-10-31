@@ -102,7 +102,7 @@ export async function ProjectCaseStudy({ project, index }: { project: Project; i
         <MaskedHeading
           as="h1"
           lines={[{ text: project.title }]}
-          className="mt-6 text-[clamp(2.75rem,1.2rem+7vw,8.5rem)] leading-[0.95] font-semibold tracking-[-0.05em] text-balance"
+          className="mt-6 text-[clamp(2.5rem,1.2rem+5.6vw,6.75rem)] leading-[0.95] font-semibold tracking-[-0.05em] text-balance"
         />
 
         <div className="mt-10 grid gap-8 md:grid-cols-12 md:items-end">

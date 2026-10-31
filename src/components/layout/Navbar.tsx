@@ -3,7 +3,7 @@
 import { m } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { MobileMenu } from "@/components/layout/MobileMenu";
@@ -16,7 +16,7 @@ import type { Dictionary } from "@/data/dictionaries";
 import { navigationSections, type NavigationSection } from "@/data/sections";
 import { localePath, pad } from "@/i18n/format";
 import { useLocale } from "@/i18n/LocaleProvider";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { useFinePointer, useMediaQuery } from "@/hooks/use-media-query";
 import { useActiveSection, useScrolledPast } from "@/hooks/use-scroll-state";
 import { cn } from "@/lib/utils";
 import type { Profile } from "@/types/portfolio";
@@ -30,6 +30,17 @@ export interface NavbarProps {
   projectCount: number;
 }
 
+interface Highlight {
+  x: number;
+  width: number;
+}
+
+/**
+ * Site header. Starts as a transparent full-width bar over the hero and, once
+ * the page scrolls, condenses into a floating glass island. A pill slides
+ * behind the hovered or active section link; the reading-progress hairline
+ * runs along the island's bottom edge.
+ */
 export function Navbar({ copy, brand, availability, projectCount }: NavbarProps) {
   const locale = useLocale();
   const pathname = usePathname();
@@ -38,11 +49,15 @@ export function Navbar({ copy, brand, availability, projectCount }: NavbarProps)
   const isHome = pathname === home;
   const scrolled = useScrolledPast(24);
   const isDesktop = useMediaQuery("(min-width: 48rem)");
+  const finePointer = useFinePointer();
   const activeSection = useActiveSection(isHome ? navigationSections : []);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [lastPathname, setLastPathname] = useState(pathname);
+  const [hovered, setHovered] = useState<NavigationSection | null>(null);
+  const [highlight, setHighlight] = useState<Highlight | null>(null);
 
   // Close transient UI when the route changes or the layout becomes desktop.
   if (pathname !== lastPathname) {
@@ -56,6 +71,35 @@ export function Navbar({ copy, brand, availability, projectCount }: NavbarProps)
     : pathname.startsWith(projectsPath)
       ? "work"
       : null;
+
+  const target = hovered ?? current;
+
+  // Measure the link the pill should sit behind; re-measure on resize/fonts.
+  const measure = useCallback(() => {
+    const list = listRef.current;
+    if (!list || !target) {
+      setHighlight(null);
+      return;
+    }
+    const link = list.querySelector<HTMLElement>(`[data-section="${target}"]`);
+    if (!link) {
+      setHighlight(null);
+      return;
+    }
+    const listRect = list.getBoundingClientRect();
+    const rect = link.getBoundingClientRect();
+    setHighlight({ x: rect.left - listRect.left, width: rect.width });
+  }, [target]);
+
+  useEffect(() => {
+    measure();
+    const list = listRef.current;
+    if (!list) return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(list);
+    document.fonts?.ready.then(measure).catch(() => {});
+    return () => observer.disconnect();
+  }, [measure, scrolled]);
 
   function closeMenu(options?: { restoreFocus?: boolean }) {
     setMenuOpen(false);
@@ -72,25 +116,30 @@ export function Navbar({ copy, brand, availability, projectCount }: NavbarProps)
     }
   }
 
-  const solid = scrolled || menuOpen;
+  const island = scrolled || menuOpen;
 
   return (
     <m.header
       className="fixed inset-x-0 top-0 z-50"
-      initial={{ opacity: 0, y: -10 }}
+      initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: ease.outExpo, delay: isHome ? 0.65 : 0.1 }}
       data-reveal=""
     >
       <div
         className={cn(
-          "relative border-b transition-[background-color,border-color,backdrop-filter] duration-500",
-          solid ? "border-line bg-ink-950/75 backdrop-blur-xl" : "border-transparent bg-transparent",
+          "relative z-10 mx-auto overflow-hidden transition-[width,max-width,margin,border-radius,background-color,border-color,box-shadow,height] duration-500 ease-out-expo",
+          island
+            ? "glass-nav mt-3 h-14 w-[calc(100%-1.5rem)] max-w-[78rem] rounded-full md:w-[calc(100%-3rem)]"
+            : "mt-0 h-(--nav-h) w-full max-w-[100rem] rounded-none border border-transparent",
         )}
       >
         <nav
           aria-label={copy.nav.primaryLabel}
-          className="container-page flex h-(--nav-h) items-center justify-between gap-4"
+          className={cn(
+            "flex h-full items-center justify-between gap-3 transition-[padding] duration-500 ease-out-expo",
+            island ? "ps-4 pe-2.5 md:ps-5 md:pe-3" : "px-(--gutter)",
+          )}
         >
           <Wordmark
             name={brand.name}
@@ -99,28 +148,39 @@ export function Navbar({ copy, brand, availability, projectCount }: NavbarProps)
             onNavigate={() => setMenuOpen(false)}
           />
 
-          <ul className="hidden items-center gap-1 md:flex">
+          <ul
+            ref={listRef}
+            className="relative hidden items-center md:flex"
+            onPointerLeave={() => setHovered(null)}
+          >
+            {/* Sliding pill behind the hovered / active link. */}
+            <span
+              aria-hidden
+              className={cn(
+                "absolute top-1/2 left-0 h-9 rounded-full border border-line bg-tint/[0.06] transition-[transform,width,opacity] duration-500 ease-out-expo",
+                highlight ? "opacity-100" : "opacity-0",
+              )}
+              style={{ transform: `translate3d(${highlight?.x ?? 0}px, -50%, 0)`, width: highlight?.width ?? 0 }}
+            />
             {navigationSections.map((id) => {
               const isActive = current === id;
               return (
-                <li key={id}>
+                <li key={id} className="relative">
                   <Link
                     href={sectionHref(locale, id)}
+                    data-section={id}
                     onClick={(event) => handleSectionClick(id, event)}
+                    onPointerEnter={finePointer ? () => setHovered(id) : undefined}
+                    onFocus={() => setHovered(id)}
+                    onBlur={() => setHovered(null)}
                     aria-current={isActive ? "true" : undefined}
                     className={cn(
-                      "group relative inline-flex h-9 items-center rounded-full px-3 text-[0.8125rem] font-medium whitespace-nowrap transition-colors duration-300 lg:px-4",
+                      "relative inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-[0.8125rem] font-medium whitespace-nowrap transition-colors duration-300 lg:px-4",
                       isActive ? "text-fg" : "text-fg-muted hover:text-fg",
                     )}
                   >
+                    {isActive ? <span aria-hidden className="size-1 rounded-full bg-accent" /> : null}
                     {copy.nav.items[id]}
-                    <span
-                      aria-hidden
-                      className={cn(
-                        "absolute bottom-0.5 left-1/2 h-px -translate-x-1/2 bg-accent transition-[width,opacity] duration-500 ease-out-expo",
-                        isActive ? "w-4 opacity-100" : "w-0 opacity-0 group-hover:w-2 group-hover:opacity-60",
-                      )}
-                    />
                   </Link>
                 </li>
               );
@@ -134,7 +194,7 @@ export function Navbar({ copy, brand, availability, projectCount }: NavbarProps)
                 "hidden h-9 items-center gap-2 rounded-full border px-4 text-[0.8125rem] font-medium whitespace-nowrap transition-colors duration-300 xl:inline-flex",
                 pathname === projectsPath
                   ? "border-accent/50 bg-accent-soft text-fg"
-                  : "border-line-strong text-fg hover:border-accent/50",
+                  : "border-line-strong text-fg hover:border-accent/50 hover:bg-accent-soft",
               )}
             >
               {copy.nav.allProjects}
@@ -142,12 +202,17 @@ export function Navbar({ copy, brand, availability, projectCount }: NavbarProps)
             </Link>
 
             <ThemeToggle copy={copy.theme} />
-            <LanguageSwitcher copy={copy.language} />
+            <div className="hidden md:block">
+              <LanguageSwitcher copy={copy.language} />
+            </div>
 
             <button
               ref={toggleRef}
               type="button"
-              className="relative inline-flex size-10 items-center justify-center rounded-full border border-line-strong md:hidden"
+              className={cn(
+                "relative inline-flex size-9 items-center justify-center rounded-full border transition-colors duration-300 md:hidden",
+                menuOpen ? "border-accent/60 bg-accent-soft" : "border-line-strong",
+              )}
               aria-expanded={menuOpen}
               aria-controls={MENU_ID}
               aria-label={menuOpen ? copy.nav.closeMenu : copy.nav.openMenu}
@@ -177,7 +242,7 @@ export function Navbar({ copy, brand, availability, projectCount }: NavbarProps)
         id={MENU_ID}
         open={menuOpen}
         current={current}
-        copy={copy.nav}
+        copy={copy}
         availability={availability}
         toggleRef={toggleRef}
         onClose={closeMenu}

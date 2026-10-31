@@ -164,6 +164,8 @@ export interface ExperienceEntry {
   /** "YYYY-MM", or `null` for a current role. */
   end: string | null;
   location?: string;
+  /** Company logo URL uploaded from the admin panel. */
+  logo?: string;
   description: string;
   responsibilities: readonly string[];
   technologies: readonly string[];

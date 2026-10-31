@@ -241,6 +241,8 @@ model Experience {
   endMonth     String?  @map("end_month") @db.Char(7)
   /// string[]
   technologies Json
+  /// Company logo uploaded from the admin panel ("/uploads/..."), or "" for none.
+  logoUrl      String   @default("") @map("logo_url") @db.VarChar(1024)
   sortOrder    Int      @default(0) @map("sort_order") @db.UnsignedInt
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)

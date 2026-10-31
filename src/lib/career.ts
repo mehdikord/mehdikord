@@ -29,6 +29,7 @@ export async function getExperience(locale: Locale): Promise<readonly Experience
         start: row.startMonth,
         end: row.endMonth,
         location: text.location || undefined,
+        logo: row.logoUrl || undefined,
         description: text.description,
         responsibilities: jsonStrings(text.responsibilities),
         technologies: jsonStrings(row.technologies),

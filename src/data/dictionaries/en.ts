@@ -93,6 +93,10 @@ export const en = {
     present: "Present",
     responsibilitiesLabel: "Responsibilities",
     technologiesLabel: "Technologies",
+    railLabel: "Trajectory",
+    currentBadge: "Current role",
+    rolesLabel: "{count} roles",
+    yearsLabel: "{count} years",
   },
   contact: {
     index: "05",
@@ -100,7 +104,10 @@ export const en = {
     title: [{ text: "Have a system" }, { text: "that needs to scale?", emphasis: true }] as Title,
     intro:
       "I'm interested in senior and lead backend roles, architecture work and ambitious products that need a dependable engineering partner. Tell me what you're building.",
+    callCta: "Just give me a call",
     emailCta: "Write me an email",
+    copyPhone: "Copy number",
+    orEmail: "or write to",
     channelsLabel: "Direct channels",
     channels: {
       email: "Email",
@@ -110,7 +117,7 @@ export const en = {
       instagram: "Instagram",
     },
     opensInNewTab: "opens in a new tab",
-    notConfigured: "Not configured — set in src/data/profile.ts",
+    notConfigured: "Not configured — set it in the admin panel",
     copyEmail: "Copy email address",
     copied: "Copied",
     stepsLabel: "How we'd start",
@@ -133,7 +140,6 @@ export const en = {
     title: [{ text: "All" }, { text: "projects.", emphasis: true }] as Title,
     intro:
       "A complete index of selected work across commerce, SaaS, enterprise and internal platforms. Filter by domain, then open any project for its overview or full case study.",
-    backHome: "Back to home",
     filterLabel: "Filter projects by category",
     all: "All",
     projectsNoun: "projects",

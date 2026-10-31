@@ -93,6 +93,8 @@ export interface ExperienceItem {
   id: string;
   startMonth: string;
   endMonth: string;
+  /** "/uploads/..." or "" when no logo has been uploaded. */
+  logoUrl: string;
   technologies: string[];
   sortOrder: number;
   text: Localized<{
