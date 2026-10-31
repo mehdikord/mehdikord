@@ -15,7 +15,7 @@ pnpm build && pnpm start   # production
 pnpm check             # typecheck + lint + production build
 ```
 
-`pnpm build` runs `db:setup` first, because pages are prerendered from the database: on a new server it creates the tables, the admin user and the initial content; on later deploys it only applies new migrations (the seeders skip anything that already exists). The database must exist and the `DB_*` user needs permission to create and alter tables.
+`pnpm build` regenerates the Prisma client (it is gitignored, so a `git pull` alone leaves it stale), then runs `db:setup`, because pages are prerendered from the database: on a new server it creates the tables, the admin user and the initial content; on later deploys it only applies new migrations (the seeders skip anything that already exists). The database must exist and the `DB_*` user needs permission to create and alter tables.
 
 `pnpm db:fresh` drops every table, re-runs the migrations and seeds again (like `migrate:fresh --seed`). `pnpm db:status` shows applied migrations.
 
