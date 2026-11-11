@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 
 function subscribeToScroll(onChange: () => void) {
   window.addEventListener("scroll", onChange, { passive: true });
@@ -45,4 +45,89 @@ export function useActiveSection<T extends string>(ids: readonly T[]): T | null 
   }, [key]);
 
   return key ? active : null;
+}
+
+export type ScrollDirection = "up" | "down";
+
+/**
+ * The direction the page is travelling, switching only after `threshold`
+ * pixels of travel the other way so small jitters don't flip it. `reset()`
+ * forces "up" (e.g. when the visitor asks for the full header back).
+ */
+export function useScrollDirection(threshold = 14): [ScrollDirection, () => void] {
+  const [direction, setDirection] = useState<ScrollDirection>("up");
+  const state = useRef({ direction: "up" as ScrollDirection, anchor: 0 });
+
+  useEffect(() => {
+    const current = state.current;
+    current.anchor = window.scrollY;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const y = window.scrollY;
+      if (current.direction === "down") {
+        if (y > current.anchor) current.anchor = y;
+        else if (y < current.anchor - threshold) {
+          current.direction = "up";
+          current.anchor = y;
+          setDirection("up");
+        }
+      } else if (y < current.anchor) current.anchor = y;
+      else if (y > current.anchor + threshold) {
+        current.direction = "down";
+        current.anchor = y;
+        setDirection("down");
+      }
+    };
+    const handleScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [threshold]);
+
+  const reset = useCallback(() => {
+    state.current.direction = "up";
+    state.current.anchor = window.scrollY;
+    setDirection("up");
+  }, []);
+
+  return [direction, reset];
+}
+
+/**
+ * Writes how far the reader is through section `id` (0…1, measured at the
+ * middle of the viewport) to `--section-p` on `target`, without re-rendering.
+ */
+export function useSectionProgress(id: string | null, target: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const node = target.current;
+    if (!node) return;
+    const section = id ? document.getElementById(id) : null;
+    if (!section) {
+      node.style.setProperty("--section-p", "0");
+      return;
+    }
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const rect = section.getBoundingClientRect();
+      const progress = (window.innerHeight * 0.5 - rect.top) / Math.max(1, rect.height);
+      node.style.setProperty("--section-p", Math.min(1, Math.max(0, progress)).toFixed(4));
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, [id, target]);
 }

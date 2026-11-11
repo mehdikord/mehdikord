@@ -24,3 +24,14 @@ export function useMediaQuery(query: string): boolean {
 export function useFinePointer(): boolean {
   return useMediaQuery("(hover: hover) and (pointer: fine)");
 }
+
+/**
+ * When scroll scenes pin to the viewport: large screens with enough height
+ * and no reduced-motion request. Mirrors the `pin:` custom variant in
+ * globals.css — keep the two in sync.
+ */
+export const PIN_QUERY = "(min-width: 64rem) and (min-height: 46rem) and (prefers-reduced-motion: no-preference)";
+
+export function usePinned(): boolean {
+  return useMediaQuery(PIN_QUERY);
+}

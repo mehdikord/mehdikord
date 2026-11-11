@@ -1,5 +1,5 @@
-import { FeaturedGallery, type FeaturedItem } from "@/components/projects/FeaturedGallery";
-import { PreviewNotice, ProjectVisual } from "@/components/projects/ProjectMedia";
+import { PreviewNotice, ProjectAmbient, ProjectScreen, projectAspect } from "@/components/projects/ProjectMedia";
+import { WorkShowcase, type ShowcaseItem } from "@/components/projects/WorkShowcase";
 import { Reveal } from "@/components/motion/Reveal";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -15,7 +15,7 @@ export async function FeaturedProjectsSection() {
   const featured = projects.filter((project) => project.featured);
   const total = projects.length;
 
-  const items: FeaturedItem[] = featured.map((project) => {
+  const items: ShowcaseItem[] = featured.map((project, position) => {
     const number = pad(locale, projects.indexOf(project) + 1);
     return {
       slug: project.slug,
@@ -23,13 +23,17 @@ export async function FeaturedProjectsSection() {
       title: project.title,
       indexLabel: `${copy.indexPrefix}${number}`,
       number,
+      order: pad(locale, position + 1),
       category: project.categoryLabel,
       period: localizeDigits(locale, project.period),
       description: project.shortDescription,
       role: project.role,
       technologies: project.technologies,
       ctaLabel: getCaseStudy(project) ? copy.caseStudy : copy.overview,
-      visual: <ProjectVisual project={project} sizes="(min-width: 1024px) 66vw, 85vw" />,
+      address: liveHost(project.liveUrl) ?? project.title,
+      aspect: projectAspect(project),
+      screen: <ProjectScreen project={project} sizes="(min-width: 1024px) 62vw, 92vw" />,
+      ambient: <ProjectAmbient project={project} />,
       notice: project.coverImage ? null : <PreviewNotice placement="top" />,
     };
   });
@@ -43,14 +47,15 @@ export async function FeaturedProjectsSection() {
       <div className="container-page relative">
         <SectionHeader index={copy.index} label={copy.label} title={copy.title} titleId="work-title" intro={copy.intro} />
 
-        <div className="mt-14 md:mt-20">
-          <FeaturedGallery
-            items={items}
-            labels={{ role: copy.roleLabel, stack: copy.stackLabel, hint: copy.panelHint }}
-          />
-        </div>
+      </div>
 
-        <Reveal className="mt-10 flex flex-col items-start gap-6 border-t border-line pt-8 sm:flex-row sm:items-center sm:justify-between md:mt-14">
+      <div className="mt-14 md:mt-20 pin:mt-6">
+        <WorkShowcase items={items} labels={{ role: copy.roleLabel, stack: copy.stackLabel, hint: copy.panelHint }} />
+      </div>
+
+      <div className="container-page relative">
+
+        <Reveal className="mt-16 flex flex-col items-start gap-6 border-t border-line pt-8 sm:flex-row sm:items-center sm:justify-between md:mt-24 pin:mt-10">
           <p className="label-mono text-fg-subtle">
             {interpolate(copy.shownCount, { shown: pad(locale, featured.length), total: pad(locale, total) })}
             <span aria-hidden className="mx-3 text-line-strong">
@@ -65,4 +70,14 @@ export async function FeaturedProjectsSection() {
       </div>
     </section>
   );
+}
+
+/** "https://www.example.com/path" → "example.com", or null when there is no usable URL. */
+function liveHost(url: string): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
 }

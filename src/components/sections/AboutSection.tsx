@@ -1,9 +1,13 @@
-import { ArchitectureDiagram } from "@/components/about/ArchitectureDiagram";
+import { AboutStage } from "@/components/about/AboutStage";
+import { PrincipleBlueprint } from "@/components/about/PrincipleBlueprint";
+import { ScrollLead } from "@/components/about/ScrollLead";
+import { StatOdometer } from "@/components/about/StatOdometer";
 import { StrengthBoard } from "@/components/about/StrengthBoard";
-import { Reveal, RevealGroup, RevealItem } from "@/components/motion/Reveal";
-import { SectionHeader } from "@/components/ui/SectionHeader";
+import { SystemStack } from "@/components/about/SystemStack";
+import { MaskedHeading } from "@/components/motion/MaskedHeading";
+import { Reveal } from "@/components/motion/Reveal";
 import { getDictionary } from "@/data/dictionaries";
-import { localizeDigits, pad } from "@/i18n/format";
+import { localizeDigits } from "@/i18n/format";
 import { getLocale } from "@/i18n/server";
 import { getProfile } from "@/lib/profile";
 import { getAllProjects, getUsedCategories } from "@/lib/projects";
@@ -16,82 +20,75 @@ export async function AboutSection() {
     getAllProjects(locale),
     getUsedCategories(locale),
   ]);
-  const [lead, ...paragraphs] = profile.bio;
+  const [lead = "", ...paragraphs] = profile.bio;
   const stats = [
-    { value: localizeDigits(locale, profile.yearsOfExperience), suffix: "+", label: copy.stats.years },
-    { value: pad(locale, projects.length), label: copy.stats.projects },
-    { value: pad(locale, categories.length), label: copy.stats.domains },
+    { value: String(profile.yearsOfExperience), suffix: "+", label: copy.stats.years },
+    { value: String(projects.length).padStart(2, "0"), label: copy.stats.projects },
+    { value: String(categories.length).padStart(2, "0"), label: copy.stats.domains },
   ];
 
   return (
-    <section id="about" aria-labelledby="about-title" className="relative py-(--section-y)">
-      <div className="container-page">
-        <SectionHeader index={copy.index} label={copy.label} title={copy.title} titleId="about-title" />
+    <section id="about" aria-labelledby="about-title" className="relative isolate">
+      {/* Pinned intro: headline, lead and figures beside the system stack. */}
+      <AboutStage>
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_55%_60%_at_72%_55%,var(--color-accent-soft),transparent_70%)] rtl:bg-[radial-gradient(ellipse_55%_60%_at_28%_55%,var(--color-accent-soft),transparent_70%)]"
+        />
+        <div className="container-page pt-(--section-y) pin:pt-[calc(var(--nav-h)+1.25rem)] pin:pb-6">
+          <Reveal still className="label-mono flex items-center gap-4 text-fg-subtle">
+            <span className="text-accent">{copy.index}</span>
+            <span>{copy.label}</span>
+            <span aria-hidden className="h-px flex-1 bg-line" />
+          </Reveal>
 
-        <div className="mt-16 grid gap-16 md:mt-24 lg:grid-cols-12 lg:gap-x-8">
-          <div className="lg:col-span-5">
-            <Reveal>
-              <p className="text-lead text-pretty text-fg">{lead}</p>
-            </Reveal>
-            {paragraphs.map((paragraph, index) => (
-              <Reveal key={paragraph} delay={0.08 * (index + 1)}>
-                <p className="mt-6 text-pretty text-fg-muted">{paragraph}</p>
-              </Reveal>
-            ))}
-
-            <RevealGroup as="ul" className="mt-14 grid grid-cols-3 border-t border-line">
-              {stats.map((stat) => (
-                <RevealItem as="li" key={stat.label} className="border-e border-line pe-4 pt-6 last:border-e-0 [&:not(:first-child)]:ps-4">
-                  <p className="text-[clamp(2.25rem,5vw,3.75rem)] leading-none font-semibold tracking-[-0.05em]">
-                    {stat.value}
-                    {stat.suffix ? <span className="text-accent">{stat.suffix}</span> : null}
-                  </p>
-                  <p className="mt-3 text-xs leading-snug text-pretty text-fg-subtle sm:text-sm">{stat.label}</p>
-                </RevealItem>
-              ))}
-            </RevealGroup>
-          </div>
-
-          <Reveal className="lg:col-span-6 lg:col-start-7" delay={0.1}>
-            <figure className="relative">
-              <div className="relative rounded-md border border-line bg-ink-900/60 p-5 sm:p-8">
-                <div
-                  aria-hidden
-                  className="hairline-grid absolute inset-0 rounded-md opacity-60 [mask-image:radial-gradient(ellipse_at_center,#000_30%,transparent_75%)]"
-                />
-                {/* Corner registration ticks */}
-                <span aria-hidden className="absolute -start-px -top-px size-3 border-s border-t border-accent/70" />
-                <span aria-hidden className="absolute -end-px -top-px size-3 border-e border-t border-accent/70" />
-                <span aria-hidden className="absolute -start-px -bottom-px size-3 border-s border-b border-accent/70" />
-                <span aria-hidden className="absolute -end-px -bottom-px size-3 border-e border-b border-accent/70" />
-                <p className="label-mono relative mb-6 flex items-center justify-between text-fg-subtle">
-                  <span>{copy.diagramLabel}</span>
-                  <span aria-hidden className="hidden text-accent sm:inline">
-                    ● {copy.diagramLive}
-                  </span>
-                </p>
-                <div dir="ltr" className="relative mx-auto max-w-[30rem]">
-                  <ArchitectureDiagram />
-                </div>
+          <div className="mt-10 grid gap-14 lg:grid-cols-12 lg:items-center lg:gap-x-10 pin:mt-6">
+            <div className="lg:col-span-5">
+              <MaskedHeading
+                id="about-title"
+                lines={copy.title}
+                className="text-[clamp(2.25rem,1.3rem+3.2vw,4.4rem)] leading-[0.98] font-semibold tracking-[-0.045em] text-balance"
+              />
+              <ScrollLead text={lead} className="text-lead mt-8 text-pretty text-fg pin:mt-7" />
+              <div className="mt-12 pin:mt-10">
+                <StatOdometer stats={stats} />
               </div>
-              <figcaption className="mt-4 max-w-lg text-sm text-pretty text-fg-subtle">{copy.diagramCaption}</figcaption>
-            </figure>
-          </Reveal>
-        </div>
+            </div>
 
-        <div className="mt-24 grid gap-12 md:mt-32 lg:grid-cols-12 lg:gap-x-8">
-          <Reveal still className="lg:col-span-3">
-            <h3 className="label-mono text-fg-subtle">{copy.philosophyLabel}</h3>
+            <div className="lg:col-span-7">
+              <SystemStack
+                initials={profile.initials}
+                years={profile.yearsOfExperience}
+                figureLabel={copy.diagramLabel}
+                liveLabel={copy.diagramLive}
+                hint={copy.diagramHint}
+                caption={copy.diagramCaption}
+              />
+            </div>
+          </div>
+        </div>
+      </AboutStage>
+
+      <div className="container-page pb-(--section-y)">
+        {paragraphs.length > 0 ? (
+          <div className="mt-20 grid gap-8 md:mt-28 lg:grid-cols-12 lg:gap-x-8">
+            <Reveal still className="lg:col-span-3">
+              <h3 className="label-mono text-fg-subtle">{copy.storyLabel}</h3>
+            </Reveal>
+            <div className="grid gap-6 sm:grid-cols-2 sm:gap-8 lg:col-span-9">
+              {paragraphs.map((paragraph, index) => (
+                <Reveal key={paragraph} delay={0.08 * index}>
+                  <p className="border-s border-line-strong ps-5 text-pretty text-fg-muted">{paragraph}</p>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="mt-24 md:mt-32">
+          <Reveal>
+            <PrincipleBlueprint principles={profile.philosophy} label={copy.philosophyLabel} />
           </Reveal>
-          <RevealGroup as="ol" className="grid gap-10 sm:grid-cols-3 sm:gap-8 lg:col-span-9">
-            {profile.philosophy.map((principle, index) => (
-              <RevealItem as="li" key={principle.title} className="border-t border-line-strong pt-6">
-                <span className="font-mono text-xs text-accent">{pad(locale, index + 1)}</span>
-                <h4 className="mt-4 text-xl font-medium tracking-tight text-balance">{principle.title}</h4>
-                <p className="mt-3 text-sm text-pretty text-fg-muted">{principle.body}</p>
-              </RevealItem>
-            ))}
-          </RevealGroup>
         </div>
 
         <div className="mt-24 grid gap-8 md:mt-32 lg:grid-cols-12 lg:gap-x-8">

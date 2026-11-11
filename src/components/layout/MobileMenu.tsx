@@ -109,10 +109,17 @@ export function MobileMenu({ id, open, current, copy, availability, toggleRef, o
                         onClick={(event) => onSectionClick(item, event)}
                         aria-current={active ? "true" : undefined}
                         className={cn(
-                          "group flex items-center gap-4 border-b border-line py-3.5 text-[1.5rem] font-medium tracking-tight transition-colors",
+                          "group relative flex items-center gap-4 border-b border-line py-3.5 text-[1.5rem] font-medium tracking-tight transition-colors",
                           active ? "text-fg" : "text-fg-muted",
                         )}
                       >
+                        {active ? (
+                          <span
+                            aria-hidden
+                            className="absolute inset-x-0 -bottom-px h-px origin-left bg-gradient-to-r from-accent to-indigo rtl:origin-right rtl:bg-gradient-to-l"
+                            style={{ transform: "scaleX(var(--section-p, 0))" }}
+                          />
+                        ) : null}
                         <span className={cn("label-mono w-7 shrink-0", active ? "text-accent" : "text-fg-subtle")}>
                           {pad(locale, index + 1)}
                         </span>
@@ -136,21 +143,31 @@ export function MobileMenu({ id, open, current, copy, availability, toggleRef, o
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: ease.outExpo, delay: 0.3 }}
               >
-                <div className="flex items-center justify-between gap-3">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <Link
+                    href={sectionHref(locale, "contact")}
+                    onClick={(event) => onSectionClick("contact", event)}
+                    className="inline-flex h-12 items-center justify-center gap-2.5 rounded-full bg-fg px-4 text-sm font-medium whitespace-nowrap text-ink-950"
+                  >
+                    <StatusDot active={availability.available} />
+                    {copy.nav.cta}
+                  </Link>
                   <Link
                     href={localePath(locale, "/projects")}
                     onClick={() => onClose()}
-                    className="inline-flex h-11 items-center gap-2 rounded-full bg-fg ps-5 pe-4 text-sm font-medium text-ink-950"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-line-strong px-4 text-sm font-medium whitespace-nowrap text-fg"
                   >
                     {copy.nav.allProjects}
-                    <ArrowUpRight className="size-4 rtl:-scale-x-100" strokeWidth={1.75} />
+                    <ArrowUpRight className="size-4 shrink-0 rtl:-scale-x-100" strokeWidth={1.75} />
                   </Link>
+                </div>
+                <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
+                  <span className="label-mono inline-flex min-w-0 items-center gap-2 text-fg-subtle">
+                    <StatusDot active={availability.available} />
+                    <span className="truncate">{availability.label}</span>
+                  </span>
                   <LanguageSwitcher copy={copy.language} onSwitch={() => onClose()} />
                 </div>
-                <span className="label-mono inline-flex items-center gap-2 text-fg-subtle">
-                  <StatusDot active={availability.available} />
-                  {availability.label}
-                </span>
               </m.div>
             </nav>
           </m.div>

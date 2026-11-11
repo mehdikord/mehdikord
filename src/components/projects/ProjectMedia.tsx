@@ -97,3 +97,58 @@ export function ProjectMedia({ project, className, sizes, preload = false, effec
 
   return effect === "tilt" ? <Tilt>{frame}</Tilt> : frame;
 }
+
+/**
+ * The project's visual at its natural aspect ratio and full width, for
+ * frames that scroll through a tall page screenshot.
+ */
+export async function ProjectScreen({ project, sizes, preload = false }: { project: Project; sizes: string; preload?: boolean }) {
+  const image = project.coverImage;
+  if (image) {
+    return (
+      <Image
+        src={image.src}
+        alt={image.alt}
+        width={image.width}
+        height={image.height}
+        sizes={sizes}
+        preload={preload}
+        className="block h-auto w-full"
+      />
+    );
+  }
+  const copy = getDictionary(await getLocale()).work;
+  return (
+    <Image
+      src={projectPlaceholder.src}
+      alt={interpolate(copy.previewAria, { title: project.title })}
+      width={projectPlaceholder.width}
+      height={projectPlaceholder.height}
+      sizes={sizes}
+      preload={preload}
+      unoptimized
+      className="block h-auto w-full"
+    />
+  );
+}
+
+/** A tiny copy of the visual, blurred behind a frame so the project's colours light its surroundings. */
+export function ProjectAmbient({ project }: { project: Project }) {
+  const image = project.coverImage;
+  return (
+    <Image
+      src={image ? image.src : projectPlaceholder.src}
+      alt=""
+      fill
+      sizes="96px"
+      unoptimized={!image}
+      className="object-cover object-top"
+    />
+  );
+}
+
+/** Height of the visual relative to its width (1.6 for a 1000×1600 shot). */
+export function projectAspect(project: Project): number {
+  const image = project.coverImage ?? projectPlaceholder;
+  return image.width > 0 ? image.height / image.width : 0.625;
+}

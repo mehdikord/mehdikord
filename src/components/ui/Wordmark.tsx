@@ -11,11 +11,13 @@ interface WordmarkProps {
   initials: string;
   homeLabel: string;
   className?: string;
+  /** Hide the name on small screens (e.g. while the header shows the section readout there). The name always yields between `md` and `lg`, where the links need the room. */
+  compactName?: boolean;
   onNavigate?: () => void;
 }
 
-/** Monogram plus name; the name collapses on narrow screens. */
-export function Wordmark({ name, initials, homeLabel, className, onNavigate }: WordmarkProps) {
+/** Monogram plus name; the slash turns on hover. */
+export function Wordmark({ name, initials, homeLabel, className, compactName = false, onNavigate }: WordmarkProps) {
   const locale = useLocale();
   const [first = "", second = ""] = initials.split("");
   return (
@@ -31,10 +33,17 @@ export function Wordmark({ name, initials, homeLabel, className, onNavigate }: W
         className="relative inline-flex size-9 items-center justify-center rounded-sm border border-line-strong font-mono text-[0.8125rem] font-medium tracking-tight transition-colors duration-500 group-hover:border-accent/70"
       >
         {first}
-        <span className="text-accent">/</span>
+        <span className="inline-block text-accent transition-transform duration-700 ease-out-expo group-hover:rotate-[180deg]">/</span>
         {second}
       </span>
-      <span className="hidden text-sm font-medium tracking-tight text-fg sm:inline">{name}</span>
+      <span
+        className={cn(
+          "truncate text-sm font-medium tracking-tight text-fg",
+          compactName ? "hidden lg:inline" : "inline md:hidden lg:inline",
+        )}
+      >
+        {name}
+      </span>
     </Link>
   );
 }
