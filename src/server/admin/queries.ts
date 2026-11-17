@@ -12,6 +12,7 @@ import type {
   StrengthItem,
 } from "@/components/admin/types";
 import { locales, type Locale } from "@/i18n/config";
+import { jsonVariants } from "@/lib/screenshots";
 import { jsonHeadline, jsonNotes, jsonStrings } from "@/lib/translations";
 import { formatHeadline } from "@/server/admin/headline";
 import { requireAdmin } from "@/server/auth";
@@ -144,14 +145,19 @@ export async function getProjectItems(): Promise<ProjectItem[]> {
     isFeatured: row.isFeatured,
     caseStudyAvailable: row.caseStudyAvailable,
     sortOrder: row.sortOrder,
-    images: row.images.map((image) => ({
-      id: image.id.toString(),
-      path: image.path,
-      alt: image.alt,
-      width: image.width,
-      height: image.height,
-      isCover: image.isCover,
-    })),
+    images: row.images.map((image) => {
+      const variants = jsonVariants(image.variants);
+      return {
+        id: image.id.toString(),
+        path: image.path,
+        thumb: variants?.poster.at(-1)?.src ?? image.path,
+        alt: image.alt,
+        width: image.width,
+        height: image.height,
+        bytes: variants?.full[0]?.bytes ?? null,
+        isCover: image.isCover,
+      };
+    }),
     text: localized(
       row.translations,
       (t) => ({

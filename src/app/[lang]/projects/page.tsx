@@ -39,7 +39,7 @@ export default async function ProjectsPage() {
     category: project.category,
     categoryLabel: project.categoryLabel,
     row: <ProjectIndexRow project={project} index={index} />,
-    media: <ProjectMedia project={project} className="h-full" sizes="40vw" />,
+    media: <ProjectMedia project={project} className="h-full" sizes="(min-width: 1024px) 40vw, 1px" pan="auto" />,
   }));
 
   const explorerCopy = {

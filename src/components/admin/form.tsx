@@ -45,6 +45,11 @@ export function useFieldError(name: string): string | undefined {
   return useContext(FormContext).errors[name];
 }
 
+/** Whether the surrounding form is submitting. */
+export function useFormPending(): boolean {
+  return useContext(FormContext).pending;
+}
+
 /** Whether any field whose name starts with `prefix` has an error. */
 export function useHasErrors(prefix: string): boolean {
   return Object.keys(useContext(FormContext).errors).some((key) => key.startsWith(prefix));

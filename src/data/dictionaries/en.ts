@@ -184,6 +184,13 @@ export const en = {
     liveLabel: "Live",
     projectNavigation: "Project navigation",
     overviewLabel: "Project overview",
+    screenLabel: "The site",
+    screenHint: "Scroll to browse the site",
+    fullPage: "View full page",
+    fullPageAria: "View the full page of {title}",
+    closeViewer: "Close",
+    pageSize: "Full page",
+    scrolled: "Scrolled",
   },
   notFound: {
     code: "404",

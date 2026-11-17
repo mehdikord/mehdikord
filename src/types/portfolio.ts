@@ -104,12 +104,35 @@ export type ProjectTranslation = Pick<
   caseStudy?: CaseStudy;
 };
 
+/** One stored copy of an image at a given size. */
+export interface ImageRendition {
+  src: string;
+  width: number;
+  height: number;
+  /** File size in bytes, when known. */
+  bytes?: number;
+}
+
+/**
+ * The optimized copies made when a screenshot is uploaded, widest first:
+ * the whole page, and a "poster" cropped to the top of the page for cards.
+ */
+export interface ImageVariants {
+  full: ImageRendition[];
+  poster: ImageRendition[];
+}
+
 /** A real screenshot uploaded from the admin panel. */
 export interface ProjectImage {
+  /** The widest full-length copy. */
   src: string;
   alt: string;
   width: number;
   height: number;
+  /** Full-length copies, widest first (at least one). */
+  full: readonly ImageRendition[];
+  /** Top-of-page crops for cards and previews, widest first (at least one). */
+  poster: readonly ImageRendition[];
 }
 
 export interface CaseStudyNote {

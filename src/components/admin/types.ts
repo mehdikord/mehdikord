@@ -58,9 +58,13 @@ export interface CategoryItem {
 export interface ProjectImageItem {
   id: string;
   path: string;
+  /** Smallest top-of-page copy, for thumbnails. */
+  thumb: string;
   alt: string;
   width: number;
   height: number;
+  /** Size of the widest optimized copy; `null` for images stored as uploaded. */
+  bytes: number | null;
   isCover: boolean;
 }
 

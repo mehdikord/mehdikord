@@ -5,8 +5,12 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   poweredByHeader: false,
   experimental: {
-    // Project screenshots are uploaded through admin Server Actions (8 MB each, plus multipart overhead).
-    serverActions: { bodySizeLimit: "9mb" },
+    // Full-page project screenshots are uploaded through admin Server Actions
+    // (up to 40 MB each, plus multipart overhead) and optimized on the server.
+    serverActions: { bodySizeLimit: "42mb" },
+    // The admin panel runs behind the proxy, which buffers request bodies up to
+    // this size (10 MB by default) — larger uploads would arrive truncated.
+    proxyClientMaxBodySize: "42mb",
   },
   images: {
     // The hero poster is served from the supplied CDN. Add hosts here if

@@ -1,9 +1,20 @@
 "use client";
 
-import { ImageIcon, Star, Upload } from "lucide-react";
+import { ImageIcon, Loader2, Star, Upload } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 
-import { AdminForm, buttonClass, CheckboxField, Field, FieldGrid, FormSection, SelectField, TextAreaField, TextField } from "@/components/admin/form";
+import {
+  AdminForm,
+  buttonClass,
+  CheckboxField,
+  Field,
+  FieldGrid,
+  FormSection,
+  SelectField,
+  TextAreaField,
+  TextField,
+  useFormPending,
+} from "@/components/admin/form";
 import { LocaleTabs, NotesField } from "@/components/admin/locale";
 import { Modal } from "@/components/admin/Modal";
 import { Badge, CreateButton, DeleteButton, PageHeader, ResourceTable, useEditor } from "@/components/admin/resource";
@@ -14,7 +25,18 @@ import { localizeDigits } from "@/i18n/format";
 import { cn } from "@/lib/utils";
 import { deleteProject, deleteProjectImage, saveProject, setProjectCover, uploadProjectImage } from "@/server/admin/actions/projects";
 
-const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/avif,image/gif";
+const IMAGE_ACCEPT = "image/png,image/jpeg,image/webp,image/avif,image/gif";
+/** Mirrors MAX_SCREENSHOT_BYTES on the server. */
+const MAX_UPLOAD_MB = 40;
+const UPLOAD_HINT = `PNG، JPG، WebP یا AVIF تا ${localizeDigits("fa", MAX_UPLOAD_MB)} مگابایت. اسکرین‌شات کامل صفحه (Full page) با عرض ۱۹۲۰ پیکسل بهترین نتیجه را می‌دهد؛ تصویر روی سرور با کیفیت بالا به WebP تبدیل و بهینه می‌شود.`;
+
+/** "30.2 مگابایت" / "820 کیلوبایت" */
+function formatBytes(bytes: number): string {
+  const megabytes = bytes / (1024 * 1024);
+  return megabytes >= 1
+    ? `${localizeDigits("fa", megabytes.toFixed(1))} مگابایت`
+    : `${localizeDigits("fa", Math.max(1, Math.round(bytes / 1024)))} کیلوبایت`;
+}
 
 const coverOf = (project: ProjectItem): ProjectImageItem | undefined => project.images.find((image) => image.isCover);
 
@@ -56,7 +78,7 @@ export function ProjectsManager({ items, categories }: { items: ProjectItem[]; c
             className: "w-28",
             cell: (row) => {
               const cover = coverOf(row);
-              return <Thumbnail src={cover?.path ?? projectPlaceholder.src} alt="" className={cover ? undefined : "opacity-60"} />;
+              return <Thumbnail src={cover?.thumb ?? projectPlaceholder.src} alt="" className={cover ? undefined : "opacity-60"} />;
             },
           },
           {
@@ -154,7 +176,7 @@ function ProjectForm({ item, categories, nextOrder, onDone }: { item: ProjectIte
 
       <FormSection
         title="تصویر پروژه"
-        description="اسکرین‌شات سایت یا محصول؛ در کارت‌ها و صفحه پروژه با همین کادر و از بالای تصویر نمایش داده می‌شود. بدون تصویر، تصویر پیش‌فرض نمایش داده می‌شود."
+        description="اسکرین‌شات کامل صفحه سایت. در کارت‌ها فقط بالای صفحه نمایش داده می‌شود و در صفحه پروژه کل صفحه داخل قاب مانیتور اسکرول می‌شود. بدون تصویر، تصویر پیش‌فرض نمایش داده می‌شود."
       >
         <CoverField cover={item ? coverOf(item) : undefined} />
       </FormSection>
@@ -210,16 +232,107 @@ function ProjectForm({ item, categories, nextOrder, onDone }: { item: ProjectIte
   );
 }
 
+interface PickedFile {
+  url: string;
+  name: string;
+  bytes: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * File input for a page screenshot: rejects oversized files before the
+ * upload starts, shows what was picked, and explains the wait while the
+ * server converts it.
+ */
+function ScreenshotInput({ name, label, hint, onPick }: { name: string; label: string; hint: string; onPick?: (file: PickedFile | null) => void }) {
+  const [picked, setPicked] = useState<PickedFile | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const pending = useFormPending();
+
+  // Release the local preview URL when it is replaced or the form closes.
+  useEffect(() => () => {
+    if (picked) URL.revokeObjectURL(picked.url);
+  }, [picked]);
+
+  function choose(input: HTMLInputElement) {
+    const file = input.files?.[0];
+    setError(null);
+    const reset = () => {
+      setPicked(null);
+      onPick?.(null);
+    };
+    if (!file) return reset();
+    if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+      input.value = "";
+      setError(`حجم این فایل ${formatBytes(file.size)} است؛ حداکثر ${localizeDigits("fa", MAX_UPLOAD_MB)} مگابایت مجاز است.`);
+      return reset();
+    }
+    const url = URL.createObjectURL(file);
+    const probe = new window.Image();
+    probe.onload = () => {
+      const next = { url, name: file.name, bytes: file.size, width: probe.naturalWidth, height: probe.naturalHeight };
+      setPicked(next);
+      onPick?.(next);
+    };
+    probe.onerror = () => {
+      URL.revokeObjectURL(url);
+      input.value = "";
+      setError("این فایل تصویر قابل خواندن نیست.");
+      reset();
+    };
+    probe.src = url;
+  }
+
+  return (
+    <Field label={label} name={name} hint={hint}>
+      {(field) => (
+        <div className="space-y-2">
+          <label
+            htmlFor={field.id}
+            className="flex cursor-pointer items-center gap-3 rounded-sm border border-dashed border-line-strong px-3 py-3 text-sm text-fg-muted transition-colors hover:border-accent/60 hover:text-fg"
+          >
+            <Upload aria-hidden className="size-4 shrink-0 text-accent" />
+            <span className="min-w-0 flex-1 truncate">{picked ? picked.name : "انتخاب فایل…"}</span>
+            <input
+              {...field}
+              type="file"
+              name={name}
+              accept={IMAGE_ACCEPT}
+              className="sr-only"
+              onChange={(event) => choose(event.currentTarget)}
+            />
+          </label>
+          {picked ? (
+            <p className="text-xs text-fg-subtle">
+              <span dir="ltr">
+                {localizeDigits("fa", picked.width)}×{localizeDigits("fa", picked.height)}
+              </span>{" "}
+              پیکسل · {formatBytes(picked.bytes)} — پس از ذخیره به WebP بهینه تبدیل می‌شود.
+            </p>
+          ) : null}
+          {error ? (
+            <p role="alert" className="text-xs text-red-300">
+              {error}
+            </p>
+          ) : null}
+          {pending && picked ? (
+            <p role="status" className="flex items-center gap-2 text-xs text-accent">
+              <Loader2 aria-hidden className="size-3.5 animate-spin" />
+              در حال بارگذاری و بهینه‌سازی تصویر… ممکن است چند ثانیه طول بکشد.
+            </p>
+          ) : null}
+        </div>
+      )}
+    </Field>
+  );
+}
+
 function CoverField({ cover }: { cover?: ProjectImageItem }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [remove, setRemove] = useState(false);
 
-  // Release the local preview URL when it is replaced or the modal closes.
-  useEffect(() => () => {
-    if (selected) URL.revokeObjectURL(selected);
-  }, [selected]);
-
-  const shown = selected ?? (cover && !remove ? cover.path : projectPlaceholder.src);
+  const shown = selected ?? (cover && !remove ? cover.thumb : projectPlaceholder.src);
   const isDefault = !selected && (!cover || remove);
 
   return (
@@ -231,44 +344,35 @@ function CoverField({ cover }: { cover?: ProjectImageItem }) {
         </span>
       </div>
       <div className="space-y-3">
-        <Field
-          label={cover ? "جایگزینی تصویر" : "بارگذاری تصویر"}
+        <ScreenshotInput
           name="cover"
-          hint="JPG، PNG، WebP، AVIF یا GIF تا ۸ مگابایت. اندازه پیشنهادی ۱۶۰۰×۱۰۰۰ پیکسل (نسبت ۱۶:۱۰)."
-        >
-          {(field) => (
-            <label
-              htmlFor={field.id}
-              className="flex cursor-pointer items-center gap-3 rounded-sm border border-dashed border-line-strong px-3 py-3 text-sm text-fg-muted transition-colors hover:border-accent/60 hover:text-fg"
-            >
-              <Upload aria-hidden className="size-4 shrink-0 text-accent" />
-              <span className="truncate">{selected ? "تصویر انتخاب شد — برای ثبت، ذخیره کنید" : "انتخاب فایل…"}</span>
-              <input
-                {...field}
-                type="file"
-                name="cover"
-                accept={IMAGE_ACCEPT}
-                className="sr-only"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  setSelected(file ? URL.createObjectURL(file) : null);
-                  if (file) setRemove(false);
-                }}
-              />
-            </label>
-          )}
-        </Field>
+          label={cover ? "جایگزینی تصویر" : "بارگذاری تصویر"}
+          hint={UPLOAD_HINT}
+          onPick={(file) => {
+            setSelected(file?.url ?? null);
+            if (file) setRemove(false);
+          }}
+        />
         {cover && !selected ? (
-          <label className="flex cursor-pointer items-center gap-2.5 text-sm text-fg-muted">
-            <input
-              type="checkbox"
-              name="removeCover"
-              checked={remove}
-              onChange={(event) => setRemove(event.target.checked)}
-              className="size-4 accent-[var(--color-accent)]"
-            />
-            حذف تصویر و نمایش تصویر پیش‌فرض
-          </label>
+          <>
+            <p className="text-xs text-fg-subtle">
+              تصویر فعلی:{" "}
+              <span dir="ltr">
+                {localizeDigits("fa", cover.width)}×{localizeDigits("fa", cover.height)}
+              </span>
+              {cover.bytes ? ` · ${formatBytes(cover.bytes)} WebP` : null}
+            </p>
+            <label className="flex cursor-pointer items-center gap-2.5 text-sm text-fg-muted">
+              <input
+                type="checkbox"
+                name="removeCover"
+                checked={remove}
+                onChange={(event) => setRemove(event.target.checked)}
+                className="size-4 accent-[var(--color-accent)]"
+              />
+              حذف تصویر و نمایش تصویر پیش‌فرض
+            </label>
+          </>
         ) : null}
         <p className="text-xs text-fg-subtle">برای افزودن تصاویر بیشتر به گالری صفحه پروژه، از دکمه «گالری» در جدول استفاده کنید.</p>
       </div>
@@ -296,10 +400,13 @@ function ProjectImages({ project }: { project: ProjectItem }) {
         <ul className="grid gap-3 px-5 pt-5 sm:grid-cols-2 sm:px-6 lg:grid-cols-3">
           {project.images.map((image) => (
             <li key={image.id} className={cn("overflow-hidden rounded-md border bg-ink-950", image.isCover ? "border-accent/60" : "border-line")}>
-              <Thumbnail src={image.path} alt={image.alt} className="rounded-none border-0" />
+              <Thumbnail src={image.thumb} alt={image.alt} className="rounded-none border-0" />
               <div className="flex items-center justify-between gap-2 px-3 py-2">
-                <span className="min-w-0 truncate text-xs text-fg-subtle" dir="ltr">
-                  {image.width}×{image.height}
+                <span className="min-w-0 truncate text-xs text-fg-subtle">
+                  <span dir="ltr">
+                    {image.width}×{image.height}
+                  </span>
+                  {image.bytes ? ` · ${formatBytes(image.bytes)}` : null}
                 </span>
                 <span className="flex items-center gap-1">
                   {image.isCover ? (
@@ -322,7 +429,7 @@ function ProjectImages({ project }: { project: ProjectItem }) {
         <AdminForm action={uploadProjectImage} submitLabel="بارگذاری تصویر" key={project.images.length}>
           <input type="hidden" name="projectId" value={project.id} />
           <FieldGrid>
-            <TextField label="فایل تصویر" name="file" type="file" accept={IMAGE_ACCEPT} hint="JPG، PNG، WebP، AVIF یا GIF تا ۸ مگابایت." />
+            <ScreenshotInput label="فایل تصویر" name="file" hint={UPLOAD_HINT} />
             <TextField label="متن جایگزین (alt)" name="alt" hint="خالی بماند، عنوان پروژه استفاده می‌شود." />
           </FieldGrid>
           <CheckboxField label="به‌عنوان تصویر کاور تنظیم شود" name="isCover" hint="اولین تصویر هر پروژه خودکار کاور می‌شود. بقیه تصاویر در گالری صفحه پروژه نمایش داده می‌شوند." />

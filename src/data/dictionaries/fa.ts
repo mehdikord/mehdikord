@@ -177,6 +177,13 @@ export const fa: Dictionary = {
     liveLabel: "آنلاین",
     projectNavigation: "پیمایش پروژه‌ها",
     overviewLabel: "مرور پروژه",
+    screenLabel: "نمای سایت",
+    screenHint: "برای مرور سایت اسکرول کنید",
+    fullPage: "مشاهده کامل صفحه",
+    fullPageAria: "مشاهده کامل صفحه {title}",
+    closeViewer: "بستن",
+    pageSize: "صفحه کامل",
+    scrolled: "پیمایش",
   },
   notFound: {
     code: "۴۰۴",

@@ -220,6 +220,9 @@ model ProjectImage {
   alt       String   @default("") @db.VarChar(255)
   width     Int      @db.UnsignedInt
   height    Int      @db.UnsignedInt
+  /// { full: Rendition[]; poster: Rendition[] } — optimized WebP copies, widest
+  /// first (see `src/server/screenshots.ts`). NULL for files stored as uploaded.
+  variants  Json?
   isCover   Boolean  @default(false) @map("is_cover")
   sortOrder Int      @default(0) @map("sort_order") @db.UnsignedInt
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)

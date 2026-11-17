@@ -2,6 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 
 import { defaultLocale, type Locale } from "@/i18n/config";
 import { contentTags } from "@/lib/content-tags";
+import { toProjectImage } from "@/lib/screenshots";
 import { jsonNotes, jsonStrings, pickTranslation } from "@/lib/translations";
 import { toSafeExternalUrl } from "@/lib/utils";
 import { db } from "@/server/db";
@@ -44,12 +45,7 @@ async function getCatalogue(locale: Locale): Promise<Catalogue> {
     const text = pickTranslation(row.translations, locale);
     if (!text) return [];
 
-    const images: ProjectImage[] = row.images.map((image) => ({
-      src: image.path,
-      alt: image.alt || text.title,
-      width: image.width,
-      height: image.height,
-    }));
+    const images: ProjectImage[] = row.images.map((image) => toProjectImage(image, image.alt || text.title));
     const coverIndex = row.images.findIndex((image) => image.isCover);
 
     return [

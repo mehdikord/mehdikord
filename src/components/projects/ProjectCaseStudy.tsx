@@ -1,17 +1,20 @@
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { MaskedHeading } from "@/components/motion/MaskedHeading";
 import { Reveal, RevealGroup, RevealItem } from "@/components/motion/Reveal";
-import { ProjectMedia } from "@/components/projects/ProjectMedia";
+import { DeviceShowcase } from "@/components/projects/DeviceShowcase";
+import { getProjectShot, PreviewNotice, ProjectAmbient } from "@/components/projects/ProjectMedia";
+import { ShotImage } from "@/components/projects/ShotImage";
+import { ShotViewerButton } from "@/components/projects/ShotViewer";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { getDictionary } from "@/data/dictionaries";
 import type { Locale } from "@/i18n/config";
-import { localePath, localizeDigits, pad } from "@/i18n/format";
+import { interpolate, localePath, localizeDigits, pad } from "@/i18n/format";
 import { getLocale } from "@/i18n/server";
 import { getAdjacentProjects, getCaseStudy, getLiveUrl } from "@/lib/projects";
+import { aspectOf } from "@/lib/screenshots";
 import { cn, displayUrl } from "@/lib/utils";
 import type { CaseStudyNote, Project } from "@/types/portfolio";
 
@@ -53,6 +56,53 @@ function BulletList({ items, locale }: { items: readonly string[]; locale: Local
   );
 }
 
+/** "https://www.example.com/path" → "example.com" */
+function liveHost(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+/** The project's site on a desktop display, scrolling as the visitor scrolls. */
+async function ProjectDevice({ project, address }: { project: Project; address: string }) {
+  const copy = getDictionary(await getLocale()).caseStudy;
+  const shot = await getProjectShot(project);
+  const widest = shot.full[0];
+  // The screen is ~92vw on phones, and at most ~1240px wide on large displays.
+  const screenSizes = "(min-width: 1280px) 1240px, 92vw";
+
+  return (
+    <div className="container-page mt-14 md:mt-20">
+      <DeviceShowcase
+        title={project.title}
+        address={address}
+        aspect={aspectOf(shot.full)}
+        pageSize={shot.placeholder || !widest ? undefined : { width: widest.width, height: widest.height }}
+        screen={
+          <>
+            <ShotImage renditions={shot.full} alt={shot.alt} sizes={screenSizes} eager />
+            {shot.placeholder ? <PreviewNotice placement="top" /> : null}
+          </>
+        }
+        viewer={<ShotImage renditions={shot.full} alt={shot.alt} sizes="(min-width: 1344px) 1344px, 100vw" />}
+        ambient={<ProjectAmbient project={project} />}
+        labels={{
+          screen: copy.screenLabel,
+          hint: copy.screenHint,
+          fullPage: copy.fullPage,
+          fullPageAria: interpolate(copy.fullPageAria, { title: project.title }),
+          close: copy.closeViewer,
+          pageSize: copy.pageSize,
+          scrolled: copy.scrolled,
+        }}
+      />
+    </div>
+  );
+}
+
 /** Shared template for every project page: full case study or overview. */
 export async function ProjectCaseStudy({ project, index }: { project: Project; index: number }) {
   const locale = await getLocale();
@@ -67,6 +117,7 @@ export async function ProjectCaseStudy({ project, index }: { project: Project; i
   const arrowForward =
     "size-3.5 transition-transform duration-500 ease-out-expo group-hover:translate-x-1 rtl:-scale-x-100 rtl:group-hover:-translate-x-1";
   const [leadParagraph, ...paragraphs] = project.fullDescription;
+  const address = liveHost(liveUrl) ?? project.title;
 
   const meta = [
     { label: copy.role, value: project.role },
@@ -119,15 +170,7 @@ export async function ProjectCaseStudy({ project, index }: { project: Project; i
         </div>
       </header>
 
-      <Reveal className="container-page mt-14 md:mt-20">
-        <ProjectMedia
-          project={project}
-          effect="parallax"
-          preload
-          className="aspect-[4/3] md:aspect-[16/9]"
-          sizes="(min-width: 1440px) 1392px, 100vw"
-        />
-      </Reveal>
+      <ProjectDevice project={project} address={address} />
 
       <div className="container-page mt-20 grid gap-16 pb-(--section-y) md:mt-28 lg:grid-cols-12 lg:gap-x-8">
         <aside className="lg:col-span-4">
@@ -240,17 +283,28 @@ export async function ProjectCaseStudy({ project, index }: { project: Project; i
 
           {project.gallery.length > 0 ? (
             <Block title={copy.gallery}>
-              <div className="grid gap-6">
+              <div className="grid gap-6 sm:grid-cols-2">
                 {project.gallery.map((image) => (
-                  <Reveal key={image.src}>
-                    <Image
-                      src={image.src}
-                      alt={image.alt}
-                      width={image.width}
-                      height={image.height}
-                      sizes="(min-width: 1024px) 55vw, 100vw"
-                      className="w-full rounded-md border border-line"
-                    />
+                  <Reveal key={image.src} className="sm:last:odd:col-span-2">
+                    <ShotViewerButton
+                      label={interpolate(copy.fullPageAria, { title: image.alt })}
+                      title={image.alt}
+                      address={address}
+                      closeLabel={copy.closeViewer}
+                      image={<ShotImage renditions={image.full} alt={image.alt} sizes="(min-width: 1344px) 1344px, 100vw" />}
+                      className="rounded-md"
+                    >
+                      <span className="shot-card relative isolate block aspect-[16/11] w-full overflow-hidden rounded-md border border-line bg-ink-900">
+                        <span className="shot-window absolute inset-0 block overflow-hidden">
+                          <ShotImage
+                            renditions={image.poster}
+                            alt={image.alt}
+                            sizes="(min-width: 1024px) 28vw, (min-width: 640px) 46vw, 92vw"
+                            className="shot-pan block min-h-full w-full object-cover object-top"
+                          />
+                        </span>
+                      </span>
+                    </ShotViewerButton>
                   </Reveal>
                 ))}
               </div>

@@ -2,6 +2,8 @@
 
 import { z } from "zod";
 
+import type { Prisma } from "@/generated/prisma/client";
+
 import { contentTags } from "@/lib/content-tags";
 import { MISSING_PROJECT_SLUG, SLUG_PATTERN } from "@/lib/project-slugs";
 import type { ActionState } from "@/server/admin/action-state";
@@ -26,7 +28,9 @@ import {
 } from "@/server/admin/forms";
 import { requireAdmin } from "@/server/auth";
 import { db } from "@/server/db";
-import { IMAGE_TYPES, MAX_IMAGE_BYTES, removeUpload, storeImage, UPLOADS_URL } from "@/server/uploads";
+import { MAX_SCREENSHOT_BYTES, SCREENSHOT_TYPES, ScreenshotError, storeScreenshot, type StoredScreenshot } from "@/server/screenshots";
+import { removeUpload, UPLOADS_URL } from "@/server/uploads";
+import type { ImageRendition } from "@/types/portfolio";
 
 const slug = (max: number) =>
   required(max)
@@ -112,9 +116,42 @@ type ProjectText = z.output<typeof projectSchema>["en"];
 function readImage(formData: FormData, field: string): { file: File | null; failure?: ActionState } {
   const file = formData.get(field);
   if (!(file instanceof File) || file.size === 0) return { file: null };
-  if (!IMAGE_TYPES[file.type]) return { file: null, failure: fail("فرمت تصویر پشتیبانی نمی‌شود.", { [field]: "فقط JPG، PNG، WebP، AVIF یا GIF." }) };
-  if (file.size > MAX_IMAGE_BYTES) return { file: null, failure: fail("حجم تصویر زیاد است.", { [field]: "حداکثر حجم ۸ مگابایت است." }) };
+  if (!SCREENSHOT_TYPES.has(file.type)) return { file: null, failure: fail("فرمت تصویر پشتیبانی نمی‌شود.", { [field]: "فقط PNG، JPG، WebP، AVIF یا GIF." }) };
+  if (file.size > MAX_SCREENSHOT_BYTES) return { file: null, failure: fail("حجم تصویر زیاد است.", { [field]: "حداکثر حجم ۴۰ مگابایت است." }) };
   return { file };
+}
+
+/** Optimizes and stores an uploaded screenshot, or returns a form error for `field`. */
+async function storeProjectImage(file: File, projectId: bigint, field: string): Promise<{ stored: StoredScreenshot | null; failure?: ActionState }> {
+  try {
+    return { stored: await storeScreenshot(file, `projects/${projectId}`) };
+  } catch (error) {
+    if (!(error instanceof ScreenshotError)) console.error("Project image processing failed", error);
+    return { stored: null, failure: fail("تصویر قابل خواندن نیست.", { [field]: "فایل تصویر معتبر نیست یا پردازش آن ممکن نشد." }) };
+  }
+}
+
+const renditionJson = ({ src, width, height, bytes }: ImageRendition): Prisma.InputJsonObject => ({
+  src,
+  width,
+  height,
+  ...(bytes ? { bytes } : {}),
+});
+
+/** Database fields for a stored screenshot. */
+const imageFields = (stored: StoredScreenshot) => ({
+  path: stored.url,
+  width: stored.width,
+  height: stored.height,
+  variants: { full: stored.variants.full.map(renditionJson), poster: stored.variants.poster.map(renditionJson) },
+});
+
+/**
+ * Deletes an image's files: its own folder of optimized copies, or the single
+ * file for images stored before optimization existed.
+ */
+async function removeImageFiles(image: { path: string; variants: unknown }): Promise<void> {
+  await removeUpload(image.variants ? image.path.slice(0, image.path.lastIndexOf("/")) : image.path);
 }
 
 /**
@@ -122,23 +159,21 @@ function readImage(formData: FormData, field: string): { file: File | null; fail
  * The previous cover is deleted (row and file); gallery images are untouched.
  */
 async function replaceCover(projectId: bigint, file: File | null): Promise<ActionState | null> {
-  let stored = null;
+  let stored: StoredScreenshot | null = null;
   if (file) {
-    try {
-      stored = await storeImage(file, `projects/${projectId}`);
-    } catch {
-      return fail("تصویر قابل خواندن نیست.", { cover: "فایل تصویر معتبر نیست." });
-    }
+    const result = await storeProjectImage(file, projectId, "cover");
+    if (result.failure) return result.failure;
+    stored = result.stored;
   }
 
   const previous = await db.projectImage.findMany({ where: { projectId, isCover: true } });
   await db.$transaction([
     db.projectImage.deleteMany({ where: { id: { in: previous.map((image) => image.id) } } }),
     ...(stored
-      ? [db.projectImage.create({ data: { projectId, path: stored.url, width: stored.width, height: stored.height, isCover: true } })]
+      ? [db.projectImage.create({ data: { projectId, ...imageFields(stored), isCover: true } })]
       : []),
   ]);
-  await Promise.all(previous.map((image) => removeUpload(image.path)));
+  await Promise.all(previous.map(removeImageFiles));
   return null;
 }
 
@@ -204,12 +239,8 @@ export async function uploadProjectImage(_state: ActionState, formData: FormData
   const project = await db.project.findUnique({ where: { id: data.projectId }, select: { id: true, _count: { select: { images: true } } } });
   if (!project) return fail("پروژه پیدا نشد.");
 
-  let stored;
-  try {
-    stored = await storeImage(file, `projects/${project.id}`);
-  } catch {
-    return fail("تصویر قابل خواندن نیست.", { file: "فایل تصویر معتبر نیست." });
-  }
+  const { stored, failure: storeFailure } = await storeProjectImage(file, project.id, "file");
+  if (!stored) return storeFailure ?? fail("تصویر قابل خواندن نیست.");
 
   // The first image becomes the cover unless one is chosen explicitly later.
   const isCover = data.isCover || project._count.images === 0;
@@ -218,10 +249,8 @@ export async function uploadProjectImage(_state: ActionState, formData: FormData
     db.projectImage.create({
       data: {
         projectId: project.id,
-        path: stored.url,
+        ...imageFields(stored),
         alt: data.alt,
-        width: stored.width,
-        height: stored.height,
         isCover,
         sortOrder: project._count.images + 1,
       },
@@ -250,6 +279,6 @@ export async function deleteProjectImage(id: string): Promise<ActionState> {
   if (!image) return fail("تصویر پیدا نشد.");
 
   await db.projectImage.delete({ where: { id: image.id } });
-  await removeUpload(image.path);
+  await removeImageFiles(image);
   return succeed("تصویر حذف شد.", contentTags.projects);
 }
