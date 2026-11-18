@@ -39,6 +39,7 @@ export async function ProjectIndexRow({ project, index }: { project: Project; in
         <h2 className="mt-3 text-[clamp(1.75rem,1.3rem+1.6vw,2.75rem)] leading-[1.05] font-semibold tracking-[-0.035em]">
           <Link
             href={localePath(locale, `/projects/${project.slug}`)}
+            prefetch
             className="transition-colors duration-300 group-hover/row:text-fg after:absolute after:inset-0 after:content-['']"
           >
             {project.title}

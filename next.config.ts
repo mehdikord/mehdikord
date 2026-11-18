@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   poweredByHeader: false,
   experimental: {
+    // Upgrade reminders in `next dev` / `next build` flag security advisories only.
+    agentUpgrade: "security",
     // Full-page project screenshots are uploaded through admin Server Actions
     // (up to 40 MB each, plus multipart overhead) and optimized on the server.
     serverActions: { bodySizeLimit: "42mb" },

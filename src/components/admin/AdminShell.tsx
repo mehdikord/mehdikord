@@ -32,7 +32,11 @@ const navigation: readonly { href: string; label: string; icon: LucideIcon }[] =
   { href: "/administrator/skills", label: "مهارت‌ها", icon: Wrench },
 ];
 
-export function AdminShell({ admin, children }: { admin: { name: string; phone: string }; children: ReactNode }) {
+/**
+ * The panel chrome. `adminName` is a server-streamed slot, so the shell can
+ * render immediately on navigation while the session is checked.
+ */
+export function AdminShell({ adminName, children }: { adminName: ReactNode; children: ReactNode }) {
   const pathname = usePathname();
 
   return (
@@ -46,7 +50,7 @@ export function AdminShell({ admin, children }: { admin: { name: string; phone: 
               </span>
               <span className="leading-tight">
                 <span className="block text-sm font-semibold">پنل مدیریت</span>
-                <span className="block text-xs text-fg-subtle">{admin.name}</span>
+                <span className="block text-xs text-fg-subtle">{adminName}</span>
               </span>
             </Link>
             <form action={logout} className="lg:hidden">

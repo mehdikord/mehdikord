@@ -190,7 +190,7 @@ function ProjectInfo({ item, labels }: ProjectInfoProps) {
         </dd>
       </m.dl>
       <m.div variants={infoLine} className="mt-9">
-        <ButtonLink href={item.href} icon="up-right" ariaLabel={`${item.ctaLabel}: ${item.title}`}>
+        <ButtonLink href={item.href} prefetch icon="up-right" ariaLabel={`${item.ctaLabel}: ${item.title}`}>
           {item.ctaLabel}
         </ButtonLink>
       </m.div>
@@ -409,7 +409,7 @@ function PinnedSlide({ item, index, wrapRef }: { item: ShowcaseItem; index: numb
       style={{ zIndex: index + 1, opacity: index === 0 ? 1 : 0 }}
     >
       <Ambient>{item.ambient}</Ambient>
-      <Link href={item.href} tabIndex={-1} aria-label={`${item.ctaLabel}: ${item.title}`} className="block size-full">
+      <Link href={item.href} prefetch tabIndex={-1} aria-label={`${item.ctaLabel}: ${item.title}`} className="block size-full">
         <ProjectFrame item={item} frameRef={frameRef} />
       </Link>
     </div>
@@ -453,7 +453,7 @@ function ListEntry({ item, labels, flip }: { item: ShowcaseItem; labels: Showcas
       <Reveal className={cn("lg:col-span-7", flip && "lg:order-2")}>
         <div ref={holderRef} className="relative isolate aspect-[16/10.4]">
           <Ambient className="opacity-70">{item.ambient}</Ambient>
-          <Link href={item.href} tabIndex={-1} aria-label={`${item.ctaLabel}: ${item.title}`} className="block size-full">
+          <Link href={item.href} prefetch tabIndex={-1} aria-label={`${item.ctaLabel}: ${item.title}`} className="block size-full">
             <ProjectFrame item={item} frameRef={frameRef} />
           </Link>
         </div>

@@ -18,6 +18,8 @@ interface ButtonLinkProps {
   ariaLabel?: string;
   /** Ghost links on light surfaces use dark ink. */
   onLight?: boolean;
+  /** Passed to `<Link>`; `true` also prefetches the page's URL-dependent content. */
+  prefetch?: boolean;
 }
 
 const icons = { right: ArrowRight, "up-right": ArrowUpRight, down: ArrowDown };
@@ -44,6 +46,7 @@ export function ButtonLink({
   external = false,
   ariaLabel,
   onLight = false,
+  prefetch,
 }: ButtonLinkProps) {
   const Icon = icon === "none" ? null : icons[icon];
   const classes = cn(
@@ -89,7 +92,7 @@ export function ButtonLink({
   }
 
   return (
-    <Link href={href} className={classes} aria-label={ariaLabel}>
+    <Link href={href} prefetch={prefetch} className={classes} aria-label={ariaLabel}>
       {children}
       {iconNode}
     </Link>

@@ -13,7 +13,7 @@ import { getDictionary } from "@/data/dictionaries";
 import type { Locale } from "@/i18n/config";
 import { interpolate, localePath, localizeDigits, pad } from "@/i18n/format";
 import { getLocale } from "@/i18n/server";
-import { getAdjacentProjects, getCaseStudy, getLiveUrl } from "@/lib/projects";
+import { getAdjacentProjects, getAllProjects, getCaseStudy, getLiveUrl } from "@/lib/projects";
 import { aspectOf } from "@/lib/screenshots";
 import { cn, displayUrl } from "@/lib/utils";
 import type { CaseStudyNote, Project } from "@/types/portfolio";
@@ -75,7 +75,7 @@ async function ProjectDevice({ project, address }: { project: Project; address: 
   const screenSizes = "(min-width: 1280px) 1240px, 92vw";
 
   return (
-    <div className="container-page mt-14 md:mt-20">
+    <div className="project-device container-page mt-14 md:mt-20">
       <DeviceShowcase
         title={project.title}
         address={address}
@@ -110,7 +110,10 @@ export async function ProjectCaseStudy({ project, index }: { project: Project; i
   const copy = dictionary.caseStudy;
   const study = getCaseStudy(project);
   const liveUrl = getLiveUrl(project);
-  const adjacent = await getAdjacentProjects(locale, project.slug);
+  const [adjacent, total] = await Promise.all([
+    getAdjacentProjects(locale, project.slug),
+    getAllProjects(locale).then((projects) => projects.length),
+  ]);
   const period = localizeDigits(locale, project.period);
   const arrowBack =
     "size-3.5 transition-transform duration-500 ease-out-expo group-hover:-translate-x-1 rtl:-scale-x-100 rtl:group-hover:translate-x-1";
@@ -127,46 +130,65 @@ export async function ProjectCaseStudy({ project, index }: { project: Project; i
 
   return (
     <article>
-      <header className="container-page pt-[calc(var(--nav-h)+3.5rem)] md:pt-[calc(var(--nav-h)+6rem)]">
-        <Reveal still>
-          <Link
-            href={localePath(locale, "/projects")}
-            className="group label-mono inline-flex items-center gap-2 text-fg-subtle transition-colors hover:text-fg"
-          >
-            <ArrowLeft aria-hidden className={arrowBack} />
-            {copy.back}
-          </Link>
-        </Reveal>
+      <header className="project-hero relative isolate overflow-x-clip">
+        {/* The project's own colours, drawn from its screenshot, tint the header. */}
+        <div aria-hidden className="project-hero-glow">
+          <ProjectAmbient project={project} />
+        </div>
 
-        <Reveal still className="label-mono mt-14 flex flex-wrap items-center gap-x-3 gap-y-1 text-fg-subtle md:mt-20">
-          <span className="text-accent">
-            {dictionary.work.indexPrefix}
-            {pad(locale, index + 1)}
-          </span>
-          <span>{project.categoryLabel}</span>
-          <span aria-hidden>·</span>
-          <span>{period}</span>
-          <span aria-hidden>·</span>
-          <span>{study ? copy.caseStudyLabel : copy.overviewLabel}</span>
-        </Reveal>
-
-        <MaskedHeading
-          as="h1"
-          lines={[{ text: project.title }]}
-          className="mt-6 text-[clamp(2.5rem,1.2rem+5.6vw,6.75rem)] leading-[0.95] font-semibold tracking-[-0.05em] text-balance"
-        />
-
-        <div className="mt-10 grid gap-8 md:grid-cols-12 md:items-end">
-          <Reveal delay={0.15} className="md:col-span-7">
-            <p className="text-lead text-pretty text-fg-muted">{project.shortDescription}</p>
+        <div className="container-page pt-[calc(var(--nav-h)+1.5rem)] md:pt-[calc(var(--nav-h)+2.25rem)]">
+          <Reveal still className="flex items-center justify-between gap-6 border-b border-line pb-4">
+            <Link
+              href={localePath(locale, "/projects")}
+              className="group label-mono -my-2 inline-flex items-center gap-2 py-2 text-fg-subtle transition-colors hover:text-fg"
+            >
+              <ArrowLeft aria-hidden className={arrowBack} />
+              {copy.back}
+            </Link>
+            <p className="label-mono flex shrink-0 items-center gap-3 text-fg-subtle">
+              <span className="hidden sm:inline">{study ? copy.caseStudyLabel : copy.overviewLabel}</span>
+              <span aria-hidden className="hidden h-px w-6 bg-line-strong sm:block" />
+              <span className="tabular-nums">
+                <span className="text-accent">{pad(locale, index + 1)}</span>
+                <span className="mx-1.5 text-fg-subtle/60">/</span>
+                {pad(locale, total)}
+              </span>
+            </p>
           </Reveal>
-          {liveUrl ? (
-            <Reveal delay={0.25} className="md:col-span-4 md:col-start-9 md:justify-self-end">
-              <ButtonLink href={liveUrl} external icon="up-right" ariaLabel={`${copy.live}: ${project.title} (${dictionary.contact.opensInNewTab})`}>
-                {copy.live}
-              </ButtonLink>
-            </Reveal>
-          ) : null}
+
+          <div className="mt-12 grid gap-8 md:mt-16 lg:grid-cols-12 lg:items-end lg:gap-x-8">
+            <MaskedHeading
+              as="h1"
+              lines={[{ text: project.title }]}
+              className="text-[clamp(2.75rem,1.3rem+5.4vw,6rem)] leading-[0.92] font-semibold tracking-[-0.04em] text-balance lg:col-span-7"
+            />
+            <div className="lg:col-span-4 lg:col-start-9 lg:pb-2">
+              <Reveal delay={0.15}>
+                <p className="max-w-xl text-[1.0625rem] leading-relaxed text-pretty text-fg-muted">{project.shortDescription}</p>
+              </Reveal>
+              {liveUrl ? (
+                <Reveal delay={0.25} className="mt-7">
+                  <ButtonLink href={liveUrl} external icon="up-right" ariaLabel={`${copy.live}: ${project.title} (${dictionary.contact.opensInNewTab})`}>
+                    {copy.live}
+                  </ButtonLink>
+                </Reveal>
+              ) : null}
+            </div>
+          </div>
+
+          <Reveal delay={0.3} className="mt-12 md:mt-16">
+            <dl className="grid grid-cols-2 gap-y-5 border-y border-line py-5 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)]">
+              {meta.map((item, position) => (
+                <div
+                  key={item.label}
+                  className={cn("min-w-0 md:border-s md:border-line md:px-6 md:first:border-s-0 md:first:ps-0", position === 0 && "col-span-2 md:col-span-1")}
+                >
+                  <dt className="label-mono text-fg-subtle">{item.label}</dt>
+                  <dd className="mt-2 text-[0.9375rem] text-fg">{item.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </Reveal>
         </div>
       </header>
 
@@ -176,12 +198,6 @@ export async function ProjectCaseStudy({ project, index }: { project: Project; i
         <aside className="lg:col-span-4">
           <div className="lg:sticky lg:top-[calc(var(--nav-h)+2.5rem)]">
             <dl className="divide-y divide-line border-y border-line">
-              {meta.map((item) => (
-                <div key={item.label} className="grid grid-cols-[7rem_1fr] gap-4 py-4">
-                  <dt className="label-mono pt-0.5 text-fg-subtle">{item.label}</dt>
-                  <dd className="text-sm">{item.value}</dd>
-                </div>
-              ))}
               <div className="py-4">
                 <dt className="label-mono text-fg-subtle">{copy.stack}</dt>
                 <dd className="mt-4 flex flex-wrap gap-2">
@@ -323,6 +339,7 @@ export async function ProjectCaseStudy({ project, index }: { project: Project; i
               <Link
                 key={direction}
                 href={localePath(locale, `/projects/${target.slug}`)}
+                prefetch
                 rel={direction === "next" ? "next" : "prev"}
                 className={cn(
                   "group flex flex-col gap-4 py-12 transition-colors md:py-16",

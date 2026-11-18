@@ -1243,6 +1243,44 @@ html[data-theme="light"] .device-ambient {
   opacity: 0.3;
 }
 
+/* Project page header: a wash of the project's screenshot colours behind the
+   description column, fading out before it reaches the title. */
+.project-hero-glow {
+  position: absolute;
+  z-index: -1;
+  /* Spans exactly the header below the nav, so the radial fade ends inside it. */
+  inset-block: calc(var(--nav-h) + 1rem) 0;
+  inset-inline-end: -10%;
+  width: min(60rem, 95vw);
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.45;
+  filter: blur(100px) saturate(1.7);
+  mask-image: radial-gradient(closest-side, #000 30%, transparent);
+  transform: translateZ(0);
+}
+
+/* On paper, only the screenshot's hue tints the page (the paper keeps its own
+   lightness), so dark screenshots read as colour rather than a grey smudge.
+   The blend needs an opaque backdrop inside the header's isolation group. */
+html[data-theme="light"] .project-hero {
+  background: var(--color-ink-950);
+}
+
+html[data-theme="light"] .project-hero-glow {
+  opacity: 1;
+  filter: blur(100px) saturate(2.4);
+  mix-blend-mode: color;
+}
+
+/* While the device scene pins, its own top padding already separates it from
+   the header, so the project page drops the extra margin. */
+@media (min-width: 64rem) and (min-height: 46rem) and (prefers-reduced-motion: no-preference) {
+  .project-device {
+    margin-top: -1.5rem;
+  }
+}
+
 .device-body {
   position: relative;
   padding: 0.42cqi;

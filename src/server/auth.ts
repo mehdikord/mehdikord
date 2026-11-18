@@ -1,10 +1,10 @@
 import "server-only";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { db } from "@/server/db";
-import { SESSION_COOKIE, verifySession } from "@/server/session";
+import { SESSION_COOKIE, sessionTokens, verifyAnySession } from "@/server/session";
 
 export interface Admin {
   id: string;
@@ -16,7 +16,10 @@ export const LOGIN_PATH = "/administrator/login";
 
 /** The signed-in administrator, or `null`. Reads the session cookie. */
 export async function getCurrentAdmin(): Promise<Admin | null> {
-  const userId = await verifySession((await cookies()).get(SESSION_COOKIE)?.value);
+  // `cookies()` reflects a cookie just set by a Server Action (the login
+  // redirect); the raw header holds every same-named cookie the browser sent.
+  const [jar, requestHeaders] = await Promise.all([cookies(), headers()]);
+  const userId = await verifyAnySession([jar.get(SESSION_COOKIE)?.value, ...sessionTokens(requestHeaders.get("cookie"))]);
   if (userId === null) return null;
 
   const user = await db.user.findUnique({ where: { id: userId }, select: { id: true, name: true, phone: true } });

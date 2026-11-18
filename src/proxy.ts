@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { defaultLocale, isLocale, LOCALE_COOKIE, type Locale } from "@/i18n/config";
 import { MISSING_PROJECT_SLUG } from "@/lib/project-slugs";
 import { createPrismaClient } from "@/server/prisma-client";
-import { SESSION_COOKIE, verifySession } from "@/server/session";
+import { sessionTokens, verifyAnySession } from "@/server/session";
 
 const ADMIN_PREFIX = "/administrator";
 const ADMIN_LOGIN = `${ADMIN_PREFIX}/login`;
@@ -37,7 +37,8 @@ function preferredLocale(request: NextRequest): Locale {
  * session against the database (see `src/server/auth.ts`).
  */
 async function adminProxy(request: NextRequest, pathname: string) {
-  const signedIn = (await verifySession(request.cookies.get(SESSION_COOKIE)?.value)) !== null;
+  // Not `request.cookies.get()`: it keeps only one of several same-named cookies.
+  const signedIn = (await verifyAnySession(sessionTokens(request.headers.get("cookie")))) !== null;
   const onLogin = pathname === ADMIN_LOGIN;
 
   if (!signedIn && !onLogin) return NextResponse.redirect(new URL(ADMIN_LOGIN, request.url));

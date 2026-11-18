@@ -1,7 +1,7 @@
 "use server";
 
 import { compare } from "bcryptjs";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -9,7 +9,7 @@ import type { ActionState } from "@/server/admin/action-state";
 import { fail, parseForm } from "@/server/admin/forms";
 import { LOGIN_PATH } from "@/server/auth";
 import { db } from "@/server/db";
-import { SESSION_COOKIE, SESSION_PATH, sessionCookieOptions, signSession } from "@/server/session";
+import { isHttpsRequest, SESSION_COOKIE, SESSION_PATH, sessionCookieOptions, signSession } from "@/server/session";
 
 /** Persian and Arabic-Indic digits → ASCII, without spaces or dashes. */
 const normalizePhone = (value: string) =>
@@ -38,7 +38,7 @@ export async function login(_state: ActionState, formData: FormData): Promise<Ac
   if (!user || !valid) return fail("شماره موبایل یا رمز عبور اشتباه است.");
 
   const { token, expires } = await signSession(user.id);
-  (await cookies()).set(SESSION_COOKIE, token, sessionCookieOptions(expires));
+  (await cookies()).set(SESSION_COOKIE, token, sessionCookieOptions(expires, isHttpsRequest(await headers())));
   redirect(SESSION_PATH);
 }
 
