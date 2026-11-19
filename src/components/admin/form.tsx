@@ -107,7 +107,8 @@ export function AdminForm({ action, onSuccess, submitLabel = "ذخیره", onCan
         <footer
           className={cn(
             "flex items-center justify-end gap-2 border-t border-line bg-ink-900/95 py-3.5",
-            layout === "modal" ? "sticky bottom-0 px-5 sm:px-6" : "rounded-b-lg px-5 sm:px-7",
+            // Long page forms keep Save in reach while scrolling.
+            layout === "modal" ? "sticky bottom-0 px-5 sm:px-6" : "sticky bottom-0 z-10 rounded-b-lg px-5 backdrop-blur sm:px-7",
           )}
         >
           {onCancel ? (
@@ -238,7 +239,7 @@ export function CheckboxField({ label, name, defaultChecked, hint }: { label: st
 /** Groups related fields under a small heading. */
 export function FormSection({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
-    <fieldset className="space-y-4 border-t border-line pt-5 first:border-t-0 first:pt-0">
+    <fieldset className="space-y-4 border-t border-line pt-5 first-of-type:border-t-0 first-of-type:pt-0">
       <legend className="float-start mb-1 w-full">
         <span className="text-sm font-semibold text-fg">{title}</span>
         {description ? <span className="mt-0.5 block text-xs text-fg-subtle">{description}</span> : null}

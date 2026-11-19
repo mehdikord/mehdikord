@@ -1,6 +1,8 @@
 "use client";
 
 import { ImageIcon, Loader2, Star, Upload } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import {
@@ -16,8 +18,7 @@ import {
   useFormPending,
 } from "@/components/admin/form";
 import { LocaleTabs, NotesField } from "@/components/admin/locale";
-import { Modal } from "@/components/admin/Modal";
-import { Badge, CreateButton, DeleteButton, PageHeader, ResourceTable, useEditor } from "@/components/admin/resource";
+import { BackLink, Badge, CreateButton, DeleteButton, PageHeader, ResourceTable } from "@/components/admin/resource";
 import { useToast } from "@/components/admin/Toast";
 import type { Option, ProjectImageItem, ProjectItem } from "@/components/admin/types";
 import { projectPlaceholder } from "@/data/media";
@@ -50,25 +51,30 @@ function Thumbnail({ src, alt, className }: { src: string; alt: string; classNam
 }
 const ltrMono = { dir: "ltr" as const, className: "text-start font-mono" };
 
+const LIST_HREF = "/administrator/projects";
+const editHref = (project: Pick<ProjectItem, "id">) => `${LIST_HREF}/${project.id}`;
+
+const NO_CATEGORIES = (
+  <p className="mb-4 rounded-sm border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+    برای افزودن پروژه، ابتدا یک{" "}
+    <Link href="/administrator/categories" className="underline underline-offset-4 hover:text-fg">
+      دسته‌بندی
+    </Link>{" "}
+    بسازید.
+  </p>
+);
+
 export function ProjectsManager({ items, categories }: { items: ProjectItem[]; categories: Option[] }) {
-  const editor = useEditor<ProjectItem>();
-  const gallery = useEditor<ProjectItem>();
   const categoryLabels = new Map(categories.map((category) => [category.value, category.label]));
-  // Re-read from the latest props so the images modal reflects uploads immediately.
-  const galleryProject = gallery.item ? items.find((project) => project.id === gallery.item?.id) : undefined;
 
   return (
     <>
       <PageHeader
         title="پروژه‌ها"
         description="نمونه‌کارها، مطالعه موردی و تصاویر هر پروژه. پروژه‌های ویژه در صفحه اصلی نمایش داده می‌شوند."
-        action={<CreateButton label="پروژه جدید" onClick={editor.create} />}
+        action={<CreateButton label="پروژه جدید" href={`${LIST_HREF}/new`} />}
       />
-      {categories.length === 0 ? (
-        <p className="mb-4 rounded-sm border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          برای افزودن پروژه، ابتدا یک دسته‌بندی بسازید.
-        </p>
-      ) : null}
+      {categories.length === 0 ? NO_CATEGORIES : null}
       <ResourceTable
         items={items}
         columns={[
@@ -106,36 +112,55 @@ export function ProjectsManager({ items, categories }: { items: ProjectItem[]; c
           },
         ]}
         extraActions={(row) => (
-          <button type="button" onClick={() => gallery.edit(row)} className={buttonClass("ghost", "sm")}>
+          <Link href={`${editHref(row)}#gallery`} className={buttonClass("ghost", "sm")}>
             <ImageIcon aria-hidden className="size-3.5" />
             گالری
-          </button>
+          </Link>
         )}
-        onEdit={editor.edit}
+        editHref={editHref}
         onDelete={deleteProject}
         describe={(row) => row.text.fa.title || row.slug}
       />
+    </>
+  );
+}
 
-      <Modal open={editor.open} onClose={editor.close} title={editor.item ? "ویرایش پروژه" : "پروژه جدید"} size="lg">
-        <ProjectForm item={editor.item} categories={categories} nextOrder={items.length + 1} onDone={editor.close} />
-      </Modal>
+/**
+ * The create/edit page for one project. Saving returns to the list; on an
+ * existing project the gallery is managed below the form, on the same page.
+ */
+export function ProjectEditor({ item, categories, nextOrder }: { item: ProjectItem | null; categories: Option[]; nextOrder: number }) {
+  const router = useRouter();
+  const backToList = () => router.push(LIST_HREF);
 
-      <Modal
-        open={gallery.open && Boolean(galleryProject)}
-        onClose={gallery.close}
-        title="تصاویر و گالری پروژه"
-        description={galleryProject ? galleryProject.text.fa.title || galleryProject.slug : undefined}
-        size="lg"
-      >
-        {galleryProject ? <ProjectImages project={galleryProject} /> : null}
-      </Modal>
+  return (
+    <>
+      <PageHeader
+        title={item ? "ویرایش پروژه" : "پروژه جدید"}
+        description={item ? item.text.fa.title || item.text.en.title || item.slug : "مشخصات، تصویر و متن هر دو زبان را وارد کنید."}
+        action={<BackLink href={LIST_HREF} label="بازگشت به پروژه‌ها" />}
+      />
+      {categories.length === 0 ? NO_CATEGORIES : null}
+      <ProjectForm item={item} categories={categories} nextOrder={nextOrder} onDone={backToList} />
+
+      {item ? (
+        <section id="gallery" aria-labelledby="gallery-title" className="mt-8 scroll-mt-6 overflow-hidden rounded-lg border border-line bg-ink-900/60">
+          <header className="border-b border-line px-5 py-4 sm:px-6">
+            <h2 id="gallery-title" className="text-base font-semibold">
+              تصاویر و گالری پروژه
+            </h2>
+            <p className="mt-1 text-sm text-fg-subtle">تصویر کاور در کارت‌ها و بقیه تصاویر در گالری صفحه پروژه نمایش داده می‌شوند. هر تغییر اینجا جداگانه ذخیره می‌شود.</p>
+          </header>
+          <ProjectImages project={item} />
+        </section>
+      ) : null}
     </>
   );
 }
 
 function ProjectForm({ item, categories, nextOrder, onDone }: { item: ProjectItem | null; categories: Option[]; nextOrder: number; onDone: () => void }) {
   return (
-    <AdminForm action={saveProject} onSuccess={onDone} onCancel={onDone}>
+    <AdminForm action={saveProject} onSuccess={onDone} onCancel={onDone} layout="page" submitLabel={item ? "ذخیره تغییرات" : "ثبت پروژه"}>
       {item ? <input type="hidden" name="id" value={item.id} /> : null}
 
       <FormSection title="مشخصات">
@@ -178,7 +203,7 @@ function ProjectForm({ item, categories, nextOrder, onDone }: { item: ProjectIte
         title="تصویر پروژه"
         description="اسکرین‌شات کامل صفحه سایت. در کارت‌ها فقط بالای صفحه نمایش داده می‌شود و در صفحه پروژه کل صفحه داخل قاب مانیتور اسکرول می‌شود. بدون تصویر، تصویر پیش‌فرض نمایش داده می‌شود."
       >
-        <CoverField cover={item ? coverOf(item) : undefined} />
+        <CoverField cover={item ? coverOf(item) : undefined} isNew={!item} />
       </FormSection>
 
       <FormSection title="محتوا">
@@ -328,7 +353,7 @@ function ScreenshotInput({ name, label, hint, onPick }: { name: string; label: s
   );
 }
 
-function CoverField({ cover }: { cover?: ProjectImageItem }) {
+function CoverField({ cover, isNew }: { cover?: ProjectImageItem; isNew: boolean }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [remove, setRemove] = useState(false);
 
@@ -374,7 +399,11 @@ function CoverField({ cover }: { cover?: ProjectImageItem }) {
             </label>
           </>
         ) : null}
-        <p className="text-xs text-fg-subtle">برای افزودن تصاویر بیشتر به گالری صفحه پروژه، از دکمه «گالری» در جدول استفاده کنید.</p>
+        <p className="text-xs text-fg-subtle">
+          {isNew
+            ? "تصاویر بیشتر برای گالری صفحه پروژه را پس از ثبت، از صفحه ویرایش همین پروژه اضافه کنید."
+            : "تصاویر بیشتر برای گالری صفحه پروژه را از بخش «تصاویر و گالری» پایین همین صفحه اضافه کنید."}
+        </p>
       </div>
     </div>
   );

@@ -11,9 +11,11 @@ import type {
   SkillGroupItem,
   StrengthItem,
 } from "@/components/admin/types";
+import type { Prisma } from "@/generated/prisma/client";
 import { locales, type Locale } from "@/i18n/config";
 import { jsonVariants } from "@/lib/screenshots";
 import { jsonHeadline, jsonNotes, jsonStrings } from "@/lib/translations";
+import { parseId } from "@/server/admin/forms";
 import { formatHeadline } from "@/server/admin/headline";
 import { requireAdmin } from "@/server/auth";
 import { db } from "@/server/db";
@@ -129,13 +131,32 @@ export async function getCategoryOptions(): Promise<Option[]> {
   }));
 }
 
+const projectInclude = { translations: true, images: { orderBy: ordered } } satisfies Prisma.ProjectInclude;
+
+type ProjectRow = Prisma.ProjectGetPayload<{ include: typeof projectInclude }>;
+
 export async function getProjectItems(): Promise<ProjectItem[]> {
   await requireAdmin();
-  const rows = await db.project.findMany({
-    include: { translations: true, images: { orderBy: ordered } },
-    orderBy: ordered,
-  });
-  return rows.map((row) => ({
+  const rows = await db.project.findMany({ include: projectInclude, orderBy: ordered });
+  return rows.map(toProjectItem);
+}
+
+/** One project for its edit page, or `null` when the id doesn't exist. */
+export async function getProjectItem(id: string): Promise<ProjectItem | null> {
+  await requireAdmin();
+  const key = parseId(id);
+  const row = key === null ? null : await db.project.findUnique({ where: { id: key }, include: projectInclude });
+  return row ? toProjectItem(row) : null;
+}
+
+/** Default "display order" for a new project: after the existing ones. */
+export async function getNextProjectOrder(): Promise<number> {
+  await requireAdmin();
+  return (await db.project.count()) + 1;
+}
+
+function toProjectItem(row: ProjectRow): ProjectItem {
+  return {
     id: row.id.toString(),
     projectCategoryId: row.projectCategoryId.toString(),
     slug: row.slug,
@@ -185,13 +206,33 @@ export async function getProjectItems(): Promise<ProjectItem[]> {
         caseStudyImplementation: [],
       },
     ),
-  }));
+  };
 }
+
+type ExperienceRow = Prisma.ExperienceGetPayload<{ include: { translations: true } }>;
 
 export async function getExperienceItems(): Promise<ExperienceItem[]> {
   await requireAdmin();
   const rows = await db.experience.findMany({ include: { translations: true }, orderBy: ordered });
-  return rows.map((row) => ({
+  return rows.map(toExperienceItem);
+}
+
+/** One experience entry for its edit page, or `null` when the id doesn't exist. */
+export async function getExperienceItem(id: string): Promise<ExperienceItem | null> {
+  await requireAdmin();
+  const key = parseId(id);
+  const row = key === null ? null : await db.experience.findUnique({ where: { id: key }, include: { translations: true } });
+  return row ? toExperienceItem(row) : null;
+}
+
+/** Default "display order" for a new experience entry: after the existing ones. */
+export async function getNextExperienceOrder(): Promise<number> {
+  await requireAdmin();
+  return (await db.experience.count()) + 1;
+}
+
+function toExperienceItem(row: ExperienceRow): ExperienceItem {
+  return {
     id: row.id.toString(),
     startMonth: row.startMonth,
     endMonth: row.endMonth ?? "",
@@ -210,7 +251,7 @@ export async function getExperienceItems(): Promise<ExperienceItem[]> {
       }),
       { company: "", companyContext: "", position: "", location: "", description: "", responsibilities: [] },
     ),
-  }));
+  };
 }
 
 export async function getSkillGroupItems(): Promise<SkillGroupItem[]> {

@@ -1,12 +1,12 @@
 "use client";
 
 import { Building2, Upload } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { AdminForm, Field, FieldGrid, TextAreaField, TextField } from "@/components/admin/form";
+import { AdminForm, Field, FieldGrid, FormSection, TextAreaField, TextField } from "@/components/admin/form";
 import { LocaleTabs } from "@/components/admin/locale";
-import { Modal } from "@/components/admin/Modal";
-import { Badge, CreateButton, PageHeader, ResourceTable, useEditor } from "@/components/admin/resource";
+import { BackLink, Badge, CreateButton, PageHeader, ResourceTable } from "@/components/admin/resource";
 import type { ExperienceItem } from "@/components/admin/types";
 import { cn } from "@/lib/utils";
 import { deleteExperience, saveExperience } from "@/server/admin/actions/career";
@@ -32,7 +32,7 @@ function LogoField({ logoUrl }: { logoUrl: string }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [remove, setRemove] = useState(false);
 
-  // Release the local preview URL when it is replaced or the modal closes.
+  // Release the local preview URL when it is replaced or the page unmounts.
   useEffect(() => () => {
     if (selected) URL.revokeObjectURL(selected);
   }, [selected]);
@@ -89,16 +89,15 @@ const period = (row: ExperienceItem) => (
   </span>
 );
 
-export function ExperienceManager({ items }: { items: ExperienceItem[] }) {
-  const editor = useEditor<ExperienceItem>();
-  const item = editor.item;
+const LIST_HREF = "/administrator/experience";
 
+export function ExperienceManager({ items }: { items: ExperienceItem[] }) {
   return (
     <>
       <PageHeader
         title="سوابق کاری"
         description="تایم‌لاین سوابق کاری؛ به ترتیب نمایش (معمولاً جدیدترین در ابتدا)."
-        action={<CreateButton label="سابقه جدید" onClick={editor.create} />}
+        action={<CreateButton label="سابقه جدید" href={`${LIST_HREF}/new`} />}
       />
       <ResourceTable
         items={items}
@@ -119,13 +118,30 @@ export function ExperienceManager({ items }: { items: ExperienceItem[] }) {
           { header: "بازه", cell: period },
           { header: "وضعیت", cell: (row) => (row.endMonth ? <Badge>پایان‌یافته</Badge> : <Badge tone="success">فعلی</Badge>) },
         ]}
-        onEdit={editor.edit}
+        editHref={(row) => `${LIST_HREF}/${row.id}`}
         onDelete={deleteExperience}
         describe={(row) => `${row.text.fa.position} — ${row.text.fa.company}`}
       />
-      <Modal open={editor.open} onClose={editor.close} title={item ? "ویرایش سابقه کاری" : "سابقه کاری جدید"} size="lg">
-        <AdminForm action={saveExperience} onSuccess={editor.close} onCancel={editor.close}>
-          {item ? <input type="hidden" name="id" value={item.id} /> : null}
+    </>
+  );
+}
+
+/** The create/edit page for one experience entry; saving returns to the list. */
+export function ExperienceEditor({ item, nextOrder }: { item: ExperienceItem | null; nextOrder: number }) {
+  const router = useRouter();
+  const backToList = () => router.push(LIST_HREF);
+
+  return (
+    <>
+      <PageHeader
+        title={item ? "ویرایش سابقه کاری" : "سابقه کاری جدید"}
+        description={item ? [item.text.fa.position, item.text.fa.company].filter(Boolean).join(" — ") : "مشخصات، لوگو و متن هر دو زبان را وارد کنید."}
+        action={<BackLink href={LIST_HREF} label="بازگشت به سوابق کاری" />}
+      />
+      <AdminForm action={saveExperience} onSuccess={backToList} onCancel={backToList} layout="page" submitLabel={item ? "ذخیره تغییرات" : "ثبت سابقه"}>
+        {item ? <input type="hidden" name="id" value={item.id} /> : null}
+
+        <FormSection title="مشخصات">
           <LogoField logoUrl={item?.logoUrl ?? ""} />
           <FieldGrid columns={3}>
             <TextField label="شروع" name="startMonth" type="month" defaultValue={item?.startMonth} dir="ltr" className="text-start" />
@@ -138,7 +154,7 @@ export function ExperienceManager({ items }: { items: ExperienceItem[] }) {
               className="text-start"
               hint="برای موقعیت فعلی خالی بگذارید."
             />
-            <TextField label="ترتیب نمایش" name="sortOrder" type="number" min={0} defaultValue={item?.sortOrder ?? items.length + 1} />
+            <TextField label="ترتیب نمایش" name="sortOrder" type="number" min={0} defaultValue={item?.sortOrder ?? nextOrder} />
           </FieldGrid>
           <TextAreaField
             label="تکنولوژی‌ها"
@@ -149,6 +165,9 @@ export function ExperienceManager({ items }: { items: ExperienceItem[] }) {
             className="text-start font-mono"
             hint="هر خط یک مورد."
           />
+        </FormSection>
+
+        <FormSection title="محتوا">
           <LocaleTabs>
             {(locale) => {
               const text = item?.text[locale];
@@ -172,8 +191,8 @@ export function ExperienceManager({ items }: { items: ExperienceItem[] }) {
               );
             }}
           </LocaleTabs>
-        </AdminForm>
-      </Modal>
+        </FormSection>
+      </AdminForm>
     </>
   );
 }

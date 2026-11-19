@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useState, useTransition, type ReactNode } from "react";
 
 import { buttonClass } from "@/components/admin/form";
@@ -33,12 +34,32 @@ export function PageHeader({ title, description, action }: { title: string; desc
   );
 }
 
-export function CreateButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} className={buttonClass("primary")}>
+/** Opens the create form: a modal (`onClick`) or its own page (`href`). */
+export function CreateButton({ label, ...target }: { label: string } & ({ onClick: () => void } | { href: string })) {
+  const content = (
+    <>
       <Plus aria-hidden className="size-4" />
       {label}
+    </>
+  );
+  return "href" in target ? (
+    <Link href={target.href} className={buttonClass("primary")}>
+      {content}
+    </Link>
+  ) : (
+    <button type="button" onClick={target.onClick} className={buttonClass("primary")}>
+      {content}
     </button>
+  );
+}
+
+/** Return link from a form page to its list. */
+export function BackLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link href={href} className={buttonClass("secondary")}>
+      <ArrowRight aria-hidden className="size-4 ltr:-scale-x-100" />
+      {label}
+    </Link>
   );
 }
 
@@ -51,7 +72,10 @@ export interface Column<T> {
 interface ResourceTableProps<T extends { id: string }> {
   items: readonly T[];
   columns: readonly Column<T>[];
-  onEdit: (item: T) => void;
+  /** Edit in a modal… */
+  onEdit?: (item: T) => void;
+  /** …or on the record's own page. */
+  editHref?: (item: T) => string;
   onDelete: (id: string) => Promise<ActionState>;
   /** Name shown in the delete confirmation. */
   describe: (item: T) => string;
@@ -63,6 +87,7 @@ export function ResourceTable<T extends { id: string }>({
   items,
   columns,
   onEdit,
+  editHref,
   onDelete,
   describe,
   extraActions,
@@ -99,10 +124,17 @@ export function ResourceTable<T extends { id: string }>({
               <td className="px-4 py-3">
                 <div className="flex items-center justify-end gap-1">
                   {extraActions?.(item)}
-                  <button type="button" onClick={() => onEdit(item)} className={buttonClass("ghost", "sm")}>
-                    <Pencil aria-hidden className="size-3.5" />
-                    ویرایش
-                  </button>
+                  {editHref ? (
+                    <Link href={editHref(item)} className={buttonClass("ghost", "sm")}>
+                      <Pencil aria-hidden className="size-3.5" />
+                      ویرایش
+                    </Link>
+                  ) : onEdit ? (
+                    <button type="button" onClick={() => onEdit(item)} className={buttonClass("ghost", "sm")}>
+                      <Pencil aria-hidden className="size-3.5" />
+                      ویرایش
+                    </button>
+                  ) : null}
                   <DeleteButton name={describe(item)} onConfirm={() => onDelete(item.id)} />
                 </div>
               </td>
